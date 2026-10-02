@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>🎯 Lucky Number</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--primary:#4f46e5;--primary-dark:#4338ca;--success:#10b981;--danger:#ef4444;
+    --warning:#f59e0b;--bg:#f1f5f9;--card:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0}
+  body{font-family:'Myanmar Text','Pyidaungsu','Noto Sans Myanmar',system-ui,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.6}
+  .hide{display:none!important}
+  .container{max-width:1200px;margin:0 auto;padding:16px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .between{justify-content:space-between}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px}
+  .card h3{margin-bottom:12px;font-size:17px}
+  .btn{border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer;
+    font-family:inherit;font-size:13px;transition:opacity .15s;display:inline-flex;
+    align-items:center;justify-content:center;gap:6px}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-success{background:var(--success);color:#fff}
+  .btn-danger{background:var(--danger);color:#fff}
+  .btn-warning{background:var(--warning);color:#fff}
+  .btn-dark{background:#1e293b;color:#fff}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+  .btn-sm{padding:5px 10px;font-size:11px}
+  .input,select{width:100%;border:1px solid var(--border);border-radius:10px;
+    padding:10px 12px;font-family:inherit;font-size:13px;outline:none;background:#fff}
+  .input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+  label{display:block;font-size:11px;color:var(--muted);margin:8px 0 4px;font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{background:#f8fafc;padding:8px;text-align:left;font-size:11px;color:var(--muted)}
+  td{padding:8px;border-bottom:1px solid var(--border)}
+  .mono{font-family:'Courier New',monospace;font-variant-numeric:tabular-nums}
+  .badge{border-radius:999px;padding:2px 10px;font-size:10px;font-weight:600;display:inline-block}
+  .badge-green{background:#d1fae5;color:#065f46}
+  .badge-red{background:#fee2e2;color:#991b1b}
+  .badge-yellow{background:#fef3c7;color:#92400e}
+  .badge-gray{background:#e2e8f0;color:#475569}
+  .badge-blue{background:#dbeafe;color:#1e40af}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  @media (max-width:900px){.grid-4{grid-template-columns:1fr 1fr}}
+  @media (max-width:768px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+    .pad-grid{grid-template-columns:repeat(5,1fr)!important}}
+  .auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+    background:linear-gradient(135deg,#eef2ff,#f1f5f9)}
+  .auth-page.dark{background:linear-gradient(135deg,#0f172a,#1e293b)}
+  .auth-card{width:100%;max-width:430px;background:#fff;border-radius:20px;padding:28px;
+    box-shadow:0 20px 60px rgba(0,0,0,.08)}
+  .tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);overflow-x:auto}
+  .tab{padding:10px 12px;border:0;background:0;cursor:pointer;font-size:12px;color:var(--muted);
+    border-bottom:2px solid transparent;font-family:inherit;white-space:nowrap}
+  .tab.active{color:var(--primary);border-color:var(--primary);font-weight:600}
+  .app-header{background:#1e293b;color:#fff;padding:12px 0;position:sticky;top:0;z-index:100}
+  .app-header .container{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .clock{background:rgba(255,255,255,.1);border-radius:10px;padding:6px 12px;text-align:right;line-height:1.2}
+  .clock .t{font-size:20px;font-family:'Courier New',monospace;font-weight:700}
+  .clock .d{font-size:10px;opacity:.7}
+  .pad-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;max-height:460px;
+    overflow-y:auto;padding:4px}
+  .num-btn{position:relative;border:1px solid var(--border);background:#fff;border-radius:8px;
+    padding:9px 2px;font-family:'Courier New',monospace;font-size:12px;font-weight:700;
+    cursor:pointer;transition:all .1s}
+  .num-btn:hover:not(:disabled){background:#eef2ff;border-color:var(--primary)}
+  .num-btn.selected{background:var(--primary);color:#fff;border-color:var(--primary-dark)}
+  .num-btn:disabled{background:#f1f5f9;color:#cbd5e1;cursor:not-allowed;text-decoration:line-through}
+  .num-btn .dot{position:absolute;top:-4px;right:-4px;background:var(--warning);color:#fff;
+    border-radius:999px;font-size:9px;padding:1px 5px;font-family:system-ui;font-weight:700}
+  .num-btn.auto-closed{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+  .coin-card{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:16px;padding:20px}
+  .coin-card .lbl{font-size:11px;opacity:.85}
+  .coin-card .val{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+  .toast{position:fixed;top:20px;right:20px;left:20px;z-index:9999;background:#1e293b;color:#fff;
+    padding:12px 18px;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,.3);font-size:13px;
+    max-width:340px;margin-left:auto;animation:slideIn .3s ease}
+  .toast.err{background:var(--danger)}
+  .toast.ok{background:var(--success)}
+  .toast.warn{background:var(--warning)}
+  @keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+  .empty{text-align:center;color:var(--muted);padding:32px}
+  .mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}.mt-2{margin-top:8px}.mt-3{margin-top:12px}
+  .text-sm{font-size:12px}.text-xs{font-size:10px}.text-muted{color:var(--muted)}
+  .text-green{color:var(--success)}.text-red{color:var(--danger)}.text-amber{color:var(--warning)}
+  .b{font-weight:700}
+  .pill-group{display:flex;gap:6px;flex-wrap:wrap}
+  .pill{background:#f1f5f9;border:1px solid var(--border);border-radius:999px;padding:4px 12px;
+    font-size:11px;cursor:pointer;font-family:inherit}
+  .pill:hover{background:#e2e8f0}
+  .announce{background:#fffbeb;border:2px solid var(--warning);border-radius:16px;padding:16px;margin-bottom:16px}
+  .announce .num{font-family:'Courier New',monospace;font-size:38px;font-weight:800;color:#d97706}
+  .pass-wrap{position:relative}
+  .pass-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;background:0;
+    cursor:pointer;font-size:16px;padding:4px;opacity:.6}
+  .info-box{background:#eef2ff;border-radius:10px;padding:10px 12px;font-size:11px;color:#3730a3;margin-top:10px}
+  .warn-box{background:#fef3c7;border-radius:10px;padding:10px 12px;font-size:11px;color:#78350f;margin-top:10px}
+  .success-box{background:#d1fae5;border-radius:10px;padding:10px 12px;font-size:11px;color:#065f46;margin-top:10px}
+  .stat-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px}
+  .stat-grad-1{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:0}
+  .stat-grad-2{background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:0}
+  .stat-grad-3{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:0}
+  .stat-grad-4{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:0}
+  .stat-grad-5{background:linear-gradient(135deg,#06b6d4,#0891b2);color:#fff;border:0}
+  .loading{display:inline-block;width:14px;height:14px;border:2px solid currentColor;
+    border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .admin-nav{background:#fff;border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:64px;z-index:99}
+  .admin-nav .tabs{border:0;margin:0;padding:0 8px}
+  .pending-row{background:#fffbeb}
+  .dt-row{display:grid;grid-template-columns:1fr 100px 80px;gap:6px;align-items:end}
+  @media (max-width:600px){.dt-row{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<script>
+  const SUPABASE_URL = 'https://rarjdplbpjokaoihuwkk.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_H7_otJnPemCBl3Thq9ZrKg_ZP732LLa';
+  const TZ = 'Asia/Yangon';
+  const SESSION_KEY = 'ln_session_v2';
+</script>
+
+<div id="toast"></div>
+<div id="loader" class="auth-page"><div style="text-align:center;color:#64748b"><span class="loading"></span> Loading...</div></div>
+
+<!-- ═══════ USER AUTH ═══════ -->
+<div id="userAuth" class="auth-page hide">
+  <div class="auth-card">
+    <div id="userClock" class="mb-3" style="text-align:right"></div>
+    <h1 style="font-size:20px">🎯 Lucky Number</h1>
+    <p class="text-sm text-muted mb-3" id="userAuthSub">Login / အကောင့်ဝင်ရန်</p>
+
+    <div class="tabs">
+      <button class="tab active" data-umode="login">Login</button>
+      <button class="tab" data-umode="signup">Signup / Account ဖန်တီး</button>
+      <button class="tab" data-umode="forgot">Passcode မေ့</button>
+    </div>
+
+    <form id="userForm" autocomplete="off">
+      <div id="userNameWrap">
+        <label>အမည် / Full Name <span style="color:var(--danger)">*</span></label>
+        <input class="input" id="u_name" placeholder="အမည် အပြည့်အစုံ" />
+      </div>
+      <label>Viber ဖုန်းနံပါတ် / Phone <span style="color:var(--danger)">*</span></label>
+      <input class="input" id="u_phone" placeholder="09xxxxxxxxx" inputmode="tel" />
+      <div id="userPassWrap">
+        <label>Passcode <span style="color:var(--danger)">*</span></label>
+        <div class="pass-wrap">
+          <input class="input" id="u_pass" type="password" placeholder="••••••" />
+          <button type="button" class="pass-toggle" data-toggle="u_pass">👁️</button>
+        </div>
+      </div>
+      <div id="userPassConfirmWrap" class="hide">
+        <label>Passcode အတည်ပြု / Confirm <span style="color:var(--danger)">*</span></label>
+        <div class="pass-wrap">
+          <input class="input" id="u_pass2" type="password" placeholder="••••••" />
+          <button type="button" class="pass-toggle" data-toggle="u_pass2">👁️</button>
+        </div>
+      </div>
+      <div id="userPassHint" class="info-box hide">Passcode အနည်းဆုံး ၄ လုံး / Min 4 chars</div>
+      <button type="submit" class="btn btn-primary mt-3" style="width:100%;padding:12px" id="userSubmitBtn">
+        <span id="userBtnTxt">ဝင်မည် / Login</span>
+      </button>
+    </form>
+
+    <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border);text-align:center">
+      <a href="#" id="toAdminLogin" class="text-xs text-muted">🛡️ Super Admin Login →</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ ADMIN AUTH — Name / Phone / Passcode ═══════ -->
+<div id="adminAuth" class="auth-page dark hide">
+  <div class="auth-card">
+    <div id="adminClock" class="mb-3" style="text-align:right"></div>
+    <h1 style="font-size:18px">🛡️ Super Admin</h1>
+    <p class="text-sm text-muted mb-3">Name / Viber / Passcode ဖြင့် ဝင်ပါ</p>
+
+    <form id="adminForm" autocomplete="off">
+      <label>အမည် / Name <span style="color:var(--danger)">*</span></label>
+      <input class="input" id="a_name" placeholder="Super Admin" />
+
+      <label>Viber ဖုန်း / Phone <span style="color:var(--danger)">*</span></label>
+      <input class="input" id="a_phone" placeholder="09xxxxxxxxx" inputmode="tel" />
+
+      <label>Passcode <span style="color:var(--danger)">*</span></label>
+      <div class="pass-wrap">
+        <input class="input" id="a_pass" type="password" placeholder="••••••" />
+        <button type="button" class="pass-toggle" data-toggle="a_pass">👁️</button>
+      </div>
+
+      <div class="info-box mt-2">
+        Default — Name: <b>Super Admin</b> · Phone: <b>09999999999</b> · Passcode: <b>admin1234</b>
+      </div>
+
+      <button type="submit" class="btn btn-success mt-3" style="width:100%;padding:12px" id="adminSubmitBtn">
+        <span id="adminBtnTxt">Admin Login</span>
+      </button>
+    </form>
+
+    <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border);text-align:center">
+      <a href="#" id="toUserLogin" class="text-xs text-muted">← User Login</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ USER DASHBOARD ═══════ -->
+<div id="dashboard" class="hide">
+  <header class="app-header">
+    <div class="container">
+      <div>
+        <div class="b" id="dashName">-</div>
+        <div class="text-xs" style="opacity:.6" id="dashPhone">-</div>
+      </div>
+      <div class="clock" id="dashClock"></div>
+      <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3)"
+        onclick="confirmLogout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div id="announceBox"></div>
+
+    <div class="grid-3 mb-3">
+      <div class="coin-card">
+        <div class="lbl">Coin Balance / လက်ကျန်</div>
+        <div class="val" id="myCoin">0</div>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="text-xs text-muted">Bonus</div>
+        <div style="font-size:24px;font-weight:800;color:var(--success)" id="bonusPct">+10%</div>
+        <div class="text-xs text-muted">Bonus ပေါင်းပြီး</div>
+      </div>
+      <div class="card" style="margin:0" id="salesStatus">
+        <div class="text-xs text-muted">Sales / အရောင်း</div>
+        <div style="font-size:16px;font-weight:700" id="salesStatusText">🟢 Open</div>
+        <div class="text-xs text-muted" id="salesCloseInfo"></div>
+      </div>
+    </div>
+
+    <div class="tabs" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:16px">
+      <button class="tab active" data-dtab="buy">🛒 Buy</button>
+      <button class="tab" data-dtab="history">📋 My Purchases</button>
+      <button class="tab" data-dtab="partners">👥 Partners / မှတ်စု</button>
+    </div>
+
+    <div id="dtab-buy">
+      <div class="grid-2">
+        <div class="card">
+          <div class="row between mb-2">
+            <h3 style="margin:0">🔢 Numbers / နံပါတ်</h3>
+            <span class="text-xs text-muted" id="padCount">1000</span>
+          </div>
+          <input class="input mb-2" id="numSearch" placeholder="Search 000-999" maxlength="3" inputmode="numeric" />
+          <div class="pad-grid" id="numberPad"></div>
+        </div>
+
+        <div class="card">
+          <h3>🛒 Buy / ဝယ်ယူ</h3>
+          <div style="text-align:center;background:#f1f5f9;border-radius:12px;padding:16px;margin-bottom:12px">
+            <div class="text-xs text-muted">Selected / ရွေးထား</div>
+            <div class="mono" style="font-size:38px;font-weight:800;color:var(--primary)" id="selectedNum">---</div>
+          </div>
+          <label>Coin Amount</label>
+          <input class="input" id="buyAmount" placeholder="e.g. 5000" inputmode="numeric"
+            style="font-size:17px;font-weight:600" />
+          <div class="pill-group mt-2">
+            <span class="pill" data-amt="1000">1,000</span>
+            <span class="pill" data-amt="2000">2,000</span>
+            <span class="pill" data-amt="5000">5,000</span>
+            <span class="pill" data-amt="10000">10,000</span>
+            <span class="pill" data-amt="20000">20,000</span>
+          </div>
+          <div style="background:#ecfdf5;border-radius:12px;padding:12px;margin-top:12px;font-size:12px">
+            <div class="row between"><span>Cost / ကုန်ကျ</span><b id="prevAmt">0</b></div>
+            <div class="row between" style="color:var(--success)">
+              <span>Bonus (<span id="prevPct">10</span>%)</span><b id="prevBonus">+0</b>
+            </div>
+            <div class="row between" style="border-top:1px solid #a7f3d0;padding-top:6px;margin-top:6px;font-size:14px">
+              <span>Total / စုစုပေါင်း</span><b style="color:var(--success)" id="prevTotal">0</b>
+            </div>
+          </div>
+          <div class="warn-box" id="approvalNotice">⏳ Admin Approval လိုအပ်</div>
+          <button class="btn btn-primary mt-3" style="width:100%;padding:14px" id="buyBtn"
+            onclick="doBuy()">ဝယ်ယူမည် / Buy</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="dtab-history" class="hide">
+      <div class="card">
+        <div class="row between mb-2">
+          <h3 style="margin:0">📋 My Purchases / ဝယ်ယူစာရင်း</h3>
+          <input class="input" id="myPurSearch" placeholder="🔍" style="max-width:120px" maxlength="3" inputmode="numeric" />
+        </div>
+        <div style="overflow-x:auto">
+          <table id="myPurchasesTable">
+            <thead><tr>
+              <th>Number</th><th>Coin</th><th>Total</th>
+              <th>Purchased</th><th>Status</th><th>Edit</th><th></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="dtab-partners" class="hide">
+      <div class="grid-2">
+        <div class="card">
+          <h3>👥 Add Partner / မှတ်တမ်းထည့်</h3>
+          <p class="text-xs text-muted mb-2">မိမိ ဝယ်ထားသော နံပါတ်အတွက် Partner အချက်အလက် မှတ်ထားနိုင်သည်</p>
+          <label>Number / ဝယ်ယူနံပါတ် <span style="color:var(--danger)">*</span></label>
+          <input class="input mono" id="pt_num" maxlength="3" inputmode="numeric" placeholder="000" />
+          <label>Partner Name / အမည် <span style="color:var(--danger)">*</span></label>
+          <input class="input" id="pt_name" placeholder="Partner အမည်" />
+          <label>Phone / ဖုန်းနံပါတ်</label>
+          <input class="input" id="pt_phone" placeholder="09xxxxxxxxx" inputmode="tel" />
+          <label>Coin Amount / Coin အရေတွက်</label>
+          <input class="input" id="pt_coin" inputmode="numeric" placeholder="0" />
+          <label>Note / မှတ်စု</label>
+          <input class="input" id="pt_note" placeholder="ဖြည့်စွက်ချက်" />
+          <div class="row mt-3">
+            <button class="btn btn-primary flex-1" style="flex:1" id="ptSaveBtn" onclick="savePartner()">💾 Save</button>
+            <button class="btn btn-ghost" id="ptCancelBtn" onclick="resetPartnerForm()">Cancel</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>📇 Partner Records</h3>
+          <div class="row mb-2">
+            <input class="input" id="ptSearch" placeholder="🔍 Name / Phone / Number" style="flex:1" />
+            <span class="text-xs text-muted" id="ptCount"></span>
+          </div>
+          <div style="overflow:auto;max-height:520px">
+            <table id="partnersTable">
+              <thead><tr>
+                <th>Num</th><th>Name</th><th>Phone</th><th style="text-align:right">Coin</th>
+                <th>Note</th><th>Actions</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ ADMIN PANEL ═══════ -->
+<div id="adminPanel" class="hide">
+  <header class="app-header">
+    <div class="container">
+      <div>
+        <div class="b">🛡️ Super Admin</div>
+        <div class="text-xs" style="opacity:.6" id="adminInfo">-</div>
+      </div>
+      <div class="clock" id="adminClock2"></div>
+      <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3)"
+        onclick="confirmLogout()">Logout</button>
+    </div>
+  </header>
+
+  <nav class="admin-nav">
+    <div class="tabs" id="adminTabs">
+      <button class="tab active" data-atab="overview">📊 Overview</button>
+      <button class="tab" data-atab="pending">⏳ Pending</button>
+      <button class="tab" data-atab="users">👥 Users</button>
+      <button class="tab" data-atab="purchases">🧾 Purchases</button>
+      <button class="tab" data-atab="partners">📇 Partners</button>
+      <button class="tab" data-atab="summary">📈 Summary</button>
+      <button class="tab" data-atab="rules">🔢 Numbers</button>
+      <button class="tab" data-atab="sales">⏰ Sales</button>
+      <button class="tab" data-atab="draw">🎉 Draw</button>
+      <button class="tab" data-atab="reset">🔑 Passcode</button>
+    </div>
+  </nav>
+
+  <div class="container" id="adminContent" style="padding-top:16px"></div>
+</div>
+
+<script>
+/* ═══════ INIT ═══════ */
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const norm = (p) => (p || '').replace(/\D/g, '');
+const fmt = (n) => new Intl.NumberFormat('en-US').format(Number(n || 0));
+const fmtDT = (d) => {
+  if (!d) return '-';
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: TZ, day:'2-digit', month:'short', year:'numeric',
+    hour:'2-digit', minute:'2-digit', hour12:true
+  }).format(new Date(d));
+};
+const monthKey = () => new Intl.DateTimeFormat('en-CA', {
+  timeZone: TZ, year:'numeric', month:'2-digit'
+}).format(new Date()).slice(0,7);
+
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  $('toast').appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+function show(id) {
+  ['loader','userAuth','adminAuth','dashboard','adminPanel'].forEach(x => $(x).classList.add('hide'));
+  $(id).classList.remove('hide');
+}
+function btnLoading(btn, txtEl, loading, text) {
+  btn.disabled = loading;
+  if (txtEl) txtEl.innerHTML = loading ? '<span class="loading"></span>' : text;
+}
+
+/* LIVE CLOCK */
+function tickClocks() {
+  const now = new Date();
+  const t = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true }).format(now);
+  const d = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, weekday:'short', day:'2-digit', month:'short', year:'numeric' }).format(now);
+  const big = `<div class="t">${t}</div><div class="d">${d} · MMT</div>`;
+  ['userClock','adminClock'].forEach(id => { const e = $(id); if (e) e.innerHTML = big; });
+  const small = `<div class="t">${t}</div><div class="d">${d}</div>`;
+  ['dashClock','adminClock2'].forEach(id => { const e = $(id); if (e) e.innerHTML = small; });
+}
+setInterval(tickClocks, 1000); tickClocks();
+
+document.querySelectorAll('.pass-toggle').forEach(b => {
+  b.onclick = () => {
+    const inp = $(b.dataset.toggle); if (!inp) return;
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    b.textContent = inp.type === 'password' ? '👁️' : '🙈';
+  };
+});
+
+/* SESSION */
+let currentUser = null, liveChannels = [];
+const saveSession = (u) => localStorage.setItem(SESSION_KEY, JSON.stringify(u));
+const loadSession = () => { try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { return null; } };
+const clearSession = () => localStorage.removeItem(SESSION_KEY);
+
+async function refreshUser() {
+  if (!currentUser) return null;
+  const { data, error } = await sb.rpc('get_user', { p_uid: currentUser.id });
+  if (error || !data) { clearSession(); currentUser = null; return null; }
+  currentUser = data; saveSession(data); return data;
+}
+async function confirmLogout() {
+  if (!confirm('Logout?')) return;
+  clearSession(); currentUser = null;
+  liveChannels.forEach(c => { try { sb.removeChannel(c); } catch(e){} });
+  liveChannels = [];
+  if (dashState.tickTimer) clearInterval(dashState.tickTimer);
+  location.hash = '';
+  show('userAuth');
+}
+
+/* USER AUTH UI */
+let userMode = 'login';
+document.querySelectorAll('[data-umode]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-umode]').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  userMode = b.dataset.umode;
+  $('userNameWrap').classList.toggle('hide', false);
+  $('userPassWrap').classList.toggle('hide', userMode === 'forgot');
+  $('userPassConfirmWrap').classList.toggle('hide', userMode !== 'signup');
+  $('userPassHint').classList.toggle('hide', userMode !== 'signup');
+  $('userAuthSub').textContent =
+    userMode === 'login'  ? 'Login / အကောင့်ဝင်ရန်' :
+    userMode === 'signup' ? 'Signup / Account ဖန်တီးရန်' : 'Forgot Passcode';
+  $('userBtnTxt').textContent =
+    userMode === 'login'  ? 'ဝင်မည် / Login' :
+    userMode === 'signup' ? 'ဖန်တီးမည် / Signup' : 'တောင်းဆိုမည်';
+});
+$('toAdminLogin').onclick = (e) => { e.preventDefault(); location.hash = '#admin'; show('adminAuth'); };
+$('toUserLogin').onclick  = (e) => { e.preventDefault(); location.hash = ''; show('userAuth'); };
+
+/* ═══════ SIGNUP / LOGIN / FORGOT ═══════ */
+$('userForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const name = $('u_name').value.trim();
+  const phone = $('u_phone').value.trim();
+  const pass = $('u_pass').value;
+  const pass2 = $('u_pass2') ? $('u_pass2').value : '';
+  const btn = $('userSubmitBtn'), txt = $('userBtnTxt');
+  const orig = txt.textContent;
+
+  try {
+    const p = norm(phone);
+    if (p.length < 7) throw new Error('ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ');
+    if (!name) throw new Error('အမည် ထည့်ပါ');
+
+    if (userMode === 'signup') {
+      if (pass.length < 4) throw new Error('Passcode အနည်းဆုံး ၄ လုံး');
+      if (pass !== pass2) throw new Error('Passcode ၂ ခု မတူညီပါ');
+      btnLoading(btn, txt, true, '');
+      const { data, error } = await sb.rpc('signup_user', {
+        p_name: name, p_phone: p, p_pass: pass
+      });
+      if (error) throw error;
+      if (data?.error === 'PHONE_EXISTS') throw new Error('ဤဖုန်းနံပါတ်ဖြင့် Account ရှိပြီးသား');
+      if (data?.error === 'PASS_TOO_SHORT') throw new Error('Passcode အနည်းဆုံး ၄ လုံး');
+      if (data?.error) throw new Error(data.error);
+      currentUser = data.user; saveSession(currentUser);
+      toast('✅ Account ဖန်တီးပြီး!', 'ok');
+      startDashboard();
+      return;
+    }
+
+    if (userMode === 'forgot') {
+      btnLoading(btn, txt, true, '');
+      const { data, error } = await sb.rpc('request_reset', { p_phone: p, p_name: name || null });
+      if (error) throw error;
+      if (data?.error === 'PHONE_NOT_FOUND') throw new Error('ဖုန်းနံပါတ် မတွေ့ပါ');
+      toast('တောင်းဆိုမှု ပို့ပြီး / Request sent', 'ok');
+      return;
+    }
+
+    /* LOGIN */
+    btnLoading(btn, txt, true, '');
+    const { data, error } = await sb.rpc('login_user', { p_phone: p, p_pass: pass });
+    if (error) throw error;
+    if (data?.error === 'INVALID_CREDS') throw new Error('ဖုန်းနံပါတ် သို့ Passcode မှားနေသည်');
+    if (data?.error?.startsWith('ACCOUNT_')) throw new Error('Account ရပ်ဆိုင်း/Ban ထားသည်');
+    if (data?.error) throw new Error(data.error);
+    if (data.user.role === 'super_admin') throw new Error('Super Admin အတွက် Admin Login ကို အသုံးပြုပါ');
+    if (data.user.full_name.trim().toLowerCase() !== name.toLowerCase())
+      throw new Error('အမည် မကိုက်ညီပါ');
+    currentUser = data.user; saveSession(currentUser);
+    toast('ကြိုဆိုပါတယ်!', 'ok');
+    startDashboard();
+  } catch (err) {
+    toast(err.message || 'Error', 'err');
+  } finally { btnLoading(btn, txt, false, orig); }
+};
+
+/* ═══════ ADMIN FORM — Name + Phone + Passcode ═══════ */
+$('adminForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const name = $('a_name').value.trim();
+  const phone = $('a_phone').value.trim();
+  const pass = $('a_pass').value;
+  const btn = $('adminSubmitBtn'), txt = $('adminBtnTxt');
+  const orig = txt.textContent;
+
+  try {
+    if (!name) throw new Error('အမည် ထည့်ပါ');
+    if (!phone) throw new Error('ဖုန်းနံပါတ် ထည့်ပါ');
+    if (!pass) throw new Error('Passcode ထည့်ပါ');
+
+    btnLoading(btn, txt, true, '');
+
+    const { data, error } = await sb.rpc('login_user', {
+      p_phone: norm(phone), p_pass: pass
+    });
+    if (error) throw error;
+
+    if (data?.error === 'INVALID_CREDS')
+      throw new Error('အချက်အလက် မှားနေသည်');
+    if (data?.error?.startsWith('ACCOUNT_'))
+      throw new Error('Account ရပ်ဆိုင်း/Ban ထားသည်');
+    if (data?.error) throw new Error(data.error);
+
+    if (data.user.role !== 'super_admin')
+      throw new Error('Super Admin မဟုတ်ပါ');
+
+    // ✅ Name match check
+    if (data.user.full_name.trim().toLowerCase() !== name.toLowerCase())
+      throw new Error('အမည် မကိုက်ညီပါ / Name mismatch');
+
+    currentUser = data.user;
+    saveSession(currentUser);
+    toast('Admin Login ✅', 'ok');
+    startAdmin();
+  } catch (err) {
+    toast(err.message, 'err');
+  } finally {
+    btnLoading(btn, txt, false, orig);
+  }
+};
+
+/* ═══════ USER DASHBOARD ═══════ */
+let dashState = { settings:null, rules:{}, totals:{}, mine:[], partners:[], sel:null, tickTimer:null, myFilter:'', ptSearch:'', editingPartnerId:null };
+
+document.querySelectorAll('[data-dtab]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-dtab]').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  const t = b.dataset.dtab;
+  ['buy','history','partners'].forEach(x => $('dtab-' + x).classList.toggle('hide', x !== t));
+});
+
+async function startDashboard() {
+  show('dashboard');
+  $('dashName').textContent = currentUser.full_name;
+  $('dashPhone').textContent = currentUser.viber_phone;
+
+  await loadUserData();
+  await loadAnnouncement();
+  await loadPartners();
+
+  liveChannels.forEach(c => { try { sb.removeChannel(c); } catch(e){} });
+  liveChannels = [];
+  const ch = sb.channel('user-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'purchases' }, loadUserData)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'number_rules' }, loadUserData)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, loadUserData)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'partners',
+        filter: `user_id=eq.${currentUser.id}` }, loadPartners)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'draws' }, loadAnnouncement)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'draw_winners' }, loadAnnouncement)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users',
+        filter: `id=eq.${currentUser.id}` },
+        async () => { await refreshUser(); updateCoinDisplay(); })
+    .subscribe();
+  liveChannels.push(ch);
+
+  if (dashState.tickTimer) clearInterval(dashState.tickTimer);
+  dashState.tickTimer = setInterval(updateCountdowns, 1000);
+
+  $('buyAmount').oninput = updatePreview;
+  document.querySelectorAll('.pill[data-amt]').forEach(p => p.onclick = () => {
+    $('buyAmount').value = p.dataset.amt; updatePreview();
+  });
+  $('numSearch').oninput = (e) => {
+    e.target.value = e.target.value.replace(/\D/g,'').slice(0,3);
+    renderPad();
+  };
+  $('myPurSearch').oninput = (e) => {
+    e.target.value = e.target.value.replace(/\D/g,'').slice(0,3);
+    dashState.myFilter = e.target.value; renderMyPurchases();
+  };
+  $('pt_num').oninput = e => e.target.value = e.target.value.replace(/\D/g,'').slice(0,3);
+  $('ptSearch').oninput = e => { dashState.ptSearch = e.target.value; renderPartners(); };
+}
+
+function updateCoinDisplay() {
+  if (!currentUser) return;
+  $('myCoin').textContent = fmt(currentUser.coin_balance);
+}
+
+async function loadUserData() {
+  if (!currentUser) return;
+  const month = monthKey();
+  const [r1, r2, r3, r4] = await Promise.all([
+    sb.from('number_rules').select('number,is_closed,max_amount,auto_closed'),
+    sb.from('purchases').select('number,total,status').eq('month_key', month).in('status', ['pending','approved']),
+    sb.from('purchases').select('*').eq('user_id', currentUser.id).order('purchased_at', { ascending: false }),
+    sb.from('settings').select('*').eq('id', 1).single()
+  ]);
+  dashState.rules = {};
+  (r1.data || []).forEach(r => dashState.rules[r.number] = r);
+  dashState.totals = {};
+  (r2.data || []).forEach(p => dashState.totals[p.number] = (dashState.totals[p.number]||0) + Number(p.total));
+  dashState.mine = r3.data || [];
+  dashState.settings = r4.data;
+
+  $('bonusPct').textContent = '+' + (dashState.settings?.bonus_percent ?? 10) + '%';
+  $('prevPct').textContent = dashState.settings?.bonus_percent ?? 10;
+  const req = dashState.settings?.require_approval;
+  $('approvalNotice').innerHTML = req
+    ? '⏳ Admin Approval လိုအပ် / Requires Approval' : '✅ Auto-approved instantly';
+  $('approvalNotice').style.background = req ? '#fef3c7' : '#d1fae5';
+  $('approvalNotice').style.color = req ? '#78350f' : '#065f46';
+
+  updateCoinDisplay(); renderPad(); renderMyPurchases();
+  updateSalesStatus(); updatePreview();
+}
+
+function updateSalesStatus() {
+  const s = dashState.settings; if (!s) return;
+  const now = new Date();
+  let open = !s.sales_closed;
+  if (s.sales_open_at && now < new Date(s.sales_open_at)) open = false;
+  if (s.sales_close_at && now >= new Date(s.sales_close_at)) open = false;
+  $('salesStatusText').textContent = open ? '🟢 Open' : '🔒 Closed';
+  $('salesStatus').style.background = open ? '#ecfdf5' : '#fef2f2';
+  let info = '';
+  if (s.sales_open_at) info += `Open: ${fmtDT(s.sales_open_at)}<br>`;
+  if (s.sales_close_at) info += `Close: ${fmtDT(s.sales_close_at)}`;
+  $('salesCloseInfo').innerHTML = info;
+  $('buyBtn').disabled = !open;
+  $('buyBtn').textContent = open ? 'ဝယ်ယူမည် / Buy' : '🔒 Closed';
+}
+function isSalesClosed() {
+  const s = dashState.settings; if (!s) return false;
+  const now = new Date();
+  if (s.sales_closed) return true;
+  if (s.sales_open_at && now < new Date(s.sales_open_at)) return true;
+  if (s.sales_close_at && now >= new Date(s.sales_close_at)) return true;
+  return false;
+}
+
+function renderPad() {
+  const q = $('numSearch').value.trim();
+  const pad = $('numberPad'); pad.innerHTML = '';
+  const closed = isSalesClosed(); let count = 0;
+  for (let i = 0; i < 1000; i++) {
+    const n = String(i).padStart(3, '0');
+    if (q && !n.includes(q)) continue;
+    count++;
+    const rule = dashState.rules[n];
+    const total = dashState.totals[n] || 0;
+    const isClosed = rule?.is_closed;
+    const isAuto = rule?.auto_closed;
+    const isFull = rule?.max_amount != null && total >= Number(rule.max_amount);
+    const disabled = closed || isClosed || isFull;
+    const selected = dashState.sel === n;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    let cls = 'num-btn';
+    if (selected) cls += ' selected';
+    if (isAuto) cls += ' auto-closed';
+    btn.className = cls; btn.disabled = disabled; btn.textContent = n;
+    let title = '';
+    if (isAuto) title = `Auto-closed`;
+    else if (isClosed) title = 'Manually closed';
+    else if (isFull) title = `Limit reached`;
+    else title = `Total: ${fmt(total)}`;
+    btn.title = title;
+    if (total > 0) {
+      const d = document.createElement('span');
+      d.className = 'dot';
+      d.textContent = total >= 1000 ? (total/1000).toFixed(1)+'k' : total;
+      btn.appendChild(d);
+    }
+    btn.onclick = () => { dashState.sel = n; $('selectedNum').textContent = n; renderPad(); };
+    pad.appendChild(btn);
+  }
+  $('padCount').textContent = count + ' numbers';
+  if (!pad.children.length) pad.innerHTML = '<div class="empty" style="grid-column:1/-1">မတွေ့ပါ</div>';
+}
+function updatePreview() {
+  const a = Number($('buyAmount').value || 0);
+  const pct = dashState.settings?.bonus_percent ?? 10;
+  const total = Math.round(a * (1 + pct/100));
+  $('prevAmt').textContent = fmt(a);
+  $('prevBonus').textContent = '+' + fmt(total - a);
+  $('prevTotal').textContent = fmt(total);
+}
+async function doBuy() {
+  if (!dashState.sel) return toast('နံပါတ် ရွေးပါ', 'err');
+  const amt = Number($('buyAmount').value);
+  if (!amt || amt <= 0) return toast('Coin ပမာဏ ထည့်ပါ', 'err');
+  $('buyBtn').disabled = true;
+  const { data, error } = await sb.rpc('place_purchase', {
+    p_uid: currentUser.id, p_number: dashState.sel, p_amount: amt
+  });
+  $('buyBtn').disabled = false;
+  if (error) return toast(error.message, 'err');
+  if (data?.error) {
+    const m = {
+      SALES_CLOSED: 'အရောင်းပိတ်ထားသည်',
+      NUMBER_CLOSED: 'ဤနံပါတ် ပိတ်ထားသည်',
+      NUMBER_LIMIT_EXCEEDED: 'ကန့်သတ်ပမာဏ ပြည့်သွားသည်',
+      INSUFFICIENT_COIN: 'Coin မလုံလောက်ပါ',
+      ACCOUNT_INACTIVE: 'Account ရပ်ဆိုင်းထားသည်'
+    };
+    return toast(m[data.error] || data.error, 'err');
+  }
+  const req = dashState.settings?.require_approval;
+  toast(req ? '✅ ဝယ်ယူမှု ပို့ပြီး — Admin Approve စောင့်ပါ' : '✅ ဝယ်ယူပြီးပါပြီ', 'ok');
+  dashState.sel = null; $('selectedNum').textContent = '---';
+  $('buyAmount').value = ''; updatePreview();
+  await loadUserData();
+}
+function statusBadge(s) {
+  const map = {
+    pending:  ['badge-yellow', 'Pending'],
+    approved: ['badge-green',  'Approved'],
+    rejected: ['badge-red',    'Rejected'],
+  };
+  const [c, t] = map[s] || ['badge-gray', s];
+  return `<span class="badge ${c}">${t}</span>`;
+}
+function renderMyPurchases() {
+  const tb = document.querySelector('#myPurchasesTable tbody');
+  tb.innerHTML = '';
+  const f = dashState.myFilter;
+  const list = f ? dashState.mine.filter(p => p.number.includes(f)) : dashState.mine;
+  if (!list.length) {
+    tb.innerHTML = `<tr><td colspan="7" class="empty">${f ? 'No match' : 'No purchases yet'}</td></tr>`;
+    return;
+  }
+  list.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.dataset.editableUntil = p.editable_until;
+    tr.dataset.status = p.status;
+    tr.innerHTML = `
+      <td class="mono b">${esc(p.number)}</td>
+      <td>${fmt(p.amount)}</td>
+      <td class="b text-green">${fmt(p.total)}</td>
+      <td class="text-xs text-muted">${fmtDT(p.purchased_at)}</td>
+      <td>${statusBadge(p.status)}</td>
+      <td class="text-xs" data-countdown>-</td>
+      <td>${p.status === 'pending' ? '<button class="btn btn-ghost btn-sm" data-edit>Edit</button>' : ''}</td>`;
+    const eb = tr.querySelector('[data-edit]');
+    if (eb) eb.onclick = () => editPurchase(p);
+    tb.appendChild(tr);
+  });
+  updateCountdowns();
+}
+function updateCountdowns() {
+  const closed = isSalesClosed();
+  document.querySelectorAll('#myPurchasesTable tbody tr').forEach(tr => {
+    if (tr.dataset.status !== 'pending') {
+      const c = tr.querySelector('[data-countdown]');
+      if (c) c.innerHTML = '<span class="text-xs text-muted">—</span>';
+      return;
+    }
+    const until = new Date(tr.dataset.editableUntil).getTime();
+    const left = until - Date.now();
+    const cell = tr.querySelector('[data-countdown]');
+    const btn = tr.querySelector('[data-edit]');
+    if (!cell) return;
+    if (left > 0 && !closed) {
+      const h = Math.floor(left/3600000);
+      const m = Math.floor((left%3600000)/60000);
+      const s = Math.floor((left%60000)/1000);
+      cell.innerHTML = `<span class="text-green mono">${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
+      if (btn) btn.disabled = false;
+    } else {
+      cell.innerHTML = '<span class="text-red">Expired</span>';
+      if (btn) btn.disabled = true;
+    }
+  });
+}
+async function editPurchase(p) {
+  const n = prompt('New number (000-999)', p.number);
+  if (!n) return;
+  if (!/^\d{1,3}$/.test(n.trim())) return toast('3 digits', 'err');
+  const a = prompt('New amount', String(p.amount));
+  if (!a) return;
+  const amt = Number(a);
+  if (!amt || amt <= 0) return toast('Invalid', 'err');
+  const { data, error } = await sb.rpc('update_purchase', {
+    p_uid: currentUser.id, p_id: p.id,
+    p_number: n.trim().padStart(3,'0'), p_amount: amt
+  });
+  if (error) return toast(error.message, 'err');
+  if (data?.error) {
+    const m = {
+      EDIT_WINDOW_EXPIRED: 'Edit window expired',
+      CANNOT_EDIT_AFTER_APPROVAL: 'Already approved',
+      SALES_CLOSED: 'Sales closed',
+      NUMBER_CLOSED: 'Number closed'
+    };
+    return toast(m[data.error] || data.error, 'err');
+  }
+  toast('✅ Updated', 'ok');
+  await loadUserData();
+}
+
+async function loadAnnouncement() {
+  const { data: dr } = await sb.from('draws').select('*')
+    .order('announced_at', { ascending: false }).limit(1).maybeSingle();
+  const box = $('announceBox');
+  if (!dr) { box.innerHTML = ''; return; }
+  const { data: ws } = await sb.from('draw_winners')
+    .select('*, users(full_name)').eq('draw_id', dr.id);
+  let html = `<div class="announce">
+    <div class="text-xs b" style="color:#92400e">🎉 Lucky Draw Announcement</div>
+    <div class="num">${esc(dr.lucky_number)}</div>`;
+  if (ws && ws.length) {
+    html += `<ul style="font-size:13px;padding-left:20px;color:#78350f;margin-top:6px">`;
+    ws.forEach(w => {
+      html += `<li>${esc(w.users?.full_name)} — Paid ${fmt(w.paid_total)}${w.is_paid ? ' · Refund ' + fmt(w.refund_coins) + ' ✅' : ''}</li>`;
+    });
+    html += `</ul>`;
+  } else html += `<div class="text-sm" style="color:#78350f">No winner</div>`;
+  html += `</div>`;
+  box.innerHTML = html;
+}
+
+/* PARTNERS */
+async function loadPartners() {
+  if (!currentUser) return;
+  const { data } = await sb.from('partners').select('*')
+    .eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  dashState.partners = data || [];
+  renderPartners();
+}
+function resetPartnerForm() {
+  dashState.editingPartnerId = null;
+  ['pt_num','pt_name','pt_phone','pt_coin','pt_note'].forEach(id => $(id).value = '');
+  $('ptSaveBtn').innerHTML = '💾 Save';
+}
+async function savePartner() {
+  const num = $('pt_num').value.trim();
+  const name = $('pt_name').value.trim();
+  const phone = $('pt_phone').value.trim();
+  const coin = Number($('pt_coin').value || 0);
+  const note = $('pt_note').value.trim();
+  if (!num) return toast('နံပါတ် ထည့်ပါ', 'err');
+  if (!name) return toast('Partner အမည် ထည့်ပါ', 'err');
+
+  const isEdit = !!dashState.editingPartnerId;
+  const rpc = isEdit ? 'partner_update' : 'partner_add';
+  const args = isEdit
+    ? { p_uid: currentUser.id, p_id: dashState.editingPartnerId,
+        p_number: num, p_name: name, p_phone: phone, p_coin: coin, p_note: note }
+    : { p_uid: currentUser.id, p_number: num, p_name: name,
+        p_phone: phone, p_coin: coin, p_note: note };
+
+  const { data, error } = await sb.rpc(rpc, args);
+  if (error) return toast('❌ ' + error.message, 'err');
+  if (data?.error) return toast('❌ ' + data.error, 'err');
+  toast(isEdit ? '✅ Updated' : '✅ Partner added', 'ok');
+  resetPartnerForm();
+  await loadPartners();
+}
+function renderPartners() {
+  const tb = document.querySelector('#partnersTable tbody');
+  tb.innerHTML = '';
+  const q = (dashState.ptSearch || '').toLowerCase();
+  const list = dashState.partners.filter(p =>
+    !q || p.number.includes(q) || (p.partner_name||'').toLowerCase().includes(q)
+      || (p.partner_phone||'').includes(q));
+  $('ptCount').textContent = `${list.length} / ${dashState.partners.length}`;
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="6" class="empty">No records</td></tr>';
+    return;
+  }
+  list.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="mono b">${esc(p.number)}</td>
+      <td>${esc(p.partner_name)}</td>
+      <td class="text-xs">${esc(p.partner_phone || '-')}</td>
+      <td style="text-align:right" class="mono">${fmt(p.coin_amount)}</td>
+      <td class="text-xs text-muted">${esc(p.note || '-')}</td>
+      <td>
+        <div class="pill-group">
+          <button class="btn btn-ghost btn-sm" data-edit>Edit</button>
+          <button class="btn btn-danger btn-sm" data-del>Del</button>
+        </div>
+      </td>`;
+    tr.querySelector('[data-edit]').onclick = () => {
+      dashState.editingPartnerId = p.id;
+      $('pt_num').value = p.number;
+      $('pt_name').value = p.partner_name;
+      $('pt_phone').value = p.partner_phone || '';
+      $('pt_coin').value = p.coin_amount;
+      $('pt_note').value = p.note || '';
+      $('ptSaveBtn').innerHTML = '💾 Update';
+      document.querySelector('[data-dtab="partners"]').click();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    tr.querySelector('[data-del]').onclick = async () => {
+      if (!confirm('Delete this record?')) return;
+      const { data, error } = await sb.rpc('partner_delete', {
+        p_uid: currentUser.id, p_id: p.id
+      });
+      if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+      toast('✅ Deleted', 'ok');
+      await loadPartners();
+    };
+    tb.appendChild(tr);
+  });
+}
+
+/* ADMIN PANEL */
+let adminTab = 'overview';
+document.querySelectorAll('[data-atab]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-atab]').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  adminTab = b.dataset.atab;
+  renderAdmin();
+});
+
+async function startAdmin() {
+  show('adminPanel');
+  $('adminInfo').textContent = `${currentUser.full_name} · ${currentUser.viber_phone}`;
+
+  liveChannels.forEach(c => { try { sb.removeChannel(c); } catch(e){} });
+  liveChannels = [];
+  const ch = sb.channel('admin-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'users' },
+        () => { if (['users','overview'].includes(adminTab)) renderAdmin(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'purchases' },
+        () => { if (['purchases','summary','overview','pending'].includes(adminTab)) renderAdmin(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'partners' },
+        () => { if (adminTab === 'partners') renderAdmin(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' },
+        () => { if (adminTab === 'sales') renderAdmin(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'reset_requests' },
+        () => { if (adminTab === 'reset') renderAdmin(); })
+    .subscribe();
+  liveChannels.push(ch);
+  renderAdmin();
+}
+async function renderAdmin() {
+  const c = $('adminContent');
+  c.innerHTML = '<div class="empty"><span class="loading"></span></div>';
+  const fn = {
+    overview: renderOverview, pending: renderPending, users: renderUsers,
+    purchases: renderPurchases, partners: renderPartnersAdmin,
+    summary: renderSummary, rules: renderRules, sales: renderSales,
+    draw: renderDraw, reset: renderReset
+  }[adminTab];
+  try { await fn(c); }
+  catch (e) { c.innerHTML = '<div class="empty text-red">Error: ' + esc(e.message) + '</div>'; }
+}
+
+async function renderOverview(c) {
+  const { data: stats, error } = await sb.rpc('admin_get_stats', { p_uid: currentUser.id });
+  if (error) throw error;
+  if (stats?.error) throw new Error(stats.error);
+  c.innerHTML = `
+    <div class="grid-4">
+      <div class="stat-card stat-grad-1">
+        <div class="text-xs" style="opacity:.85">👥 Users</div>
+        <div style="font-size:28px;font-weight:800">${stats.users}</div>
+        <div class="text-xs" style="opacity:.7">Active ${stats.active_users}</div>
+      </div>
+      <div class="stat-card stat-grad-5">
+        <div class="text-xs" style="opacity:.85">⏳ Pending</div>
+        <div style="font-size:28px;font-weight:800">${stats.pending}</div>
+        <div class="text-xs" style="opacity:.7">Awaiting approval</div>
+      </div>
+      <div class="stat-card stat-grad-2">
+        <div class="text-xs" style="opacity:.85">💰 Total Coins</div>
+        <div style="font-size:28px;font-weight:800" class="mono">${fmt(stats.total_coins)}</div>
+      </div>
+      <div class="stat-card stat-grad-3">
+        <div class="text-xs" style="opacity:.85">💵 Sales</div>
+        <div style="font-size:28px;font-weight:800" class="mono">${fmt(stats.total_amount)}</div>
+        <div class="text-xs" style="opacity:.7">This month: ${fmt(stats.month_amount)}</div>
+      </div>
+    </div>
+    <div class="grid-2 mt-3">
+      <div class="card">
+        <h3>⚠️ Alerts</h3>
+        <div class="row between" style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <span>🛑 Suspended/Banned</span><b>${stats.suspended}</b>
+        </div>
+        <div class="row between" style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <span>⏳ Pending</span><b class="${stats.pending > 0 ? 'text-red' : ''}">${stats.pending}</b>
+        </div>
+        <div class="row between" style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <span>🔑 Reset Requests</span><b>${stats.pending_reset}</b>
+        </div>
+        <div class="row between" style="padding:8px 0">
+          <span>📇 Partner Records</span><b>${stats.partners}</b>
+        </div>
+      </div>
+      <div class="card">
+        <h3>📅 This Month</h3>
+        <div class="row between" style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <span>Month</span><b class="mono">${monthKey()}</b>
+        </div>
+        <div class="row between" style="padding:8px 0">
+          <span>Sales</span><b class="text-green mono">${fmt(stats.month_amount)}</b>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function renderPending(c) {
+  const { data } = await sb.from('purchases')
+    .select('*, users(full_name, viber_phone)')
+    .eq('status', 'pending')
+    .order('purchased_at', { ascending: false });
+  const rows = data || [];
+  c.innerHTML = `
+    <div class="card">
+      <div class="row between mb-2">
+        <h3 style="margin:0">⏳ Pending (${rows.length})</h3>
+        ${rows.length > 1 ? '<button class="btn btn-success btn-sm" id="bulkApprove">✅ Approve All</button>' : ''}
+      </div>
+      ${rows.length === 0
+        ? '<div class="empty">✅ All approved</div>'
+        : `<div style="overflow:auto;max-height:600px">
+          <table><thead style="position:sticky;top:0;background:#fff;z-index:1">
+            <tr><th>User</th><th>Number</th><th style="text-align:right">Coin</th>
+            <th style="text-align:right">Total</th><th>Time</th><th>Actions</th></tr>
+          </thead><tbody id="pendingBody"></tbody></table>
+        </div>`}
+    </div>`;
+  const tb = $('pendingBody');
+  if (!tb) return;
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.className = 'pending-row';
+    tr.innerHTML = `
+      <td>${esc(r.users?.full_name)}<div class="text-xs text-muted">${esc(r.users?.viber_phone)}</div></td>
+      <td class="mono b" style="text-align:center;font-size:15px">${esc(r.number)}</td>
+      <td style="text-align:right" class="mono">${fmt(r.amount)}</td>
+      <td style="text-align:right" class="b text-green mono">${fmt(r.total)}</td>
+      <td class="text-xs text-muted">${fmtDT(r.purchased_at)}</td>
+      <td>
+        <div class="pill-group">
+          <button class="btn btn-success btn-sm" data-approve>✅</button>
+          <button class="btn btn-danger btn-sm" data-reject>❌</button>
+        </div>
+      </td>`;
+    tr.querySelector('[data-approve]').onclick = async () => {
+      const { data, error } = await sb.rpc('admin_approve_purchase', {
+        p_uid: currentUser.id, p_id: r.id
+      });
+      if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+      toast('✅ Approved', 'ok');
+      renderPending(c);
+    };
+    tr.querySelector('[data-reject]').onclick = async () => {
+      const reason = prompt('Reason?', 'Rejected');
+      if (reason === null) return;
+      const { data, error } = await sb.rpc('admin_reject_purchase', {
+        p_uid: currentUser.id, p_id: r.id, p_reason: reason || null
+      });
+      if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+      toast('✅ Rejected', 'ok');
+      renderPending(c);
+    };
+    tb.appendChild(tr);
+  });
+  if (rows.length > 1) {
+    $('bulkApprove').onclick = async () => {
+      if (!confirm(`Approve ${rows.length}?`)) return;
+      const ids = rows.map(r => r.id);
+      const { data, error } = await sb.rpc('admin_bulk_approve', {
+        p_uid: currentUser.id, p_ids: ids
+      });
+      if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+      toast(`✅ ${data.count} approved`, 'ok');
+      renderPending(c);
+    };
+  }
+}
+
+async function renderUsers(c) {
+  const { data: users } = await sb.from('users').select('*').eq('role','user')
+    .order('created_at', { ascending: false });
+  c.innerHTML = `
+    <div class="grid-2" style="align-items:start">
+      <div class="card">
+        <input class="input mb-2" id="userSearch" placeholder="🔍 Search" />
+        <div style="overflow-x:auto;max-height:600px">
+          <table id="usersTable">
+            <thead><tr><th>Name</th><th>Viber</th>
+            <th style="text-align:right">Coin</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card" id="topupBox">
+        <h3>💰 Add Coin</h3>
+        <p class="text-sm text-muted">Select a user</p>
+      </div>
+    </div>`;
+  const tb = document.querySelector('#usersTable tbody');
+  const renderRows = (q = '') => {
+    tb.innerHTML = '';
+    const filtered = (users||[]).filter(u =>
+      !q || u.full_name?.toLowerCase().includes(q.toLowerCase()) || u.viber_phone?.includes(q));
+    if (!filtered.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">None</td></tr>'; return; }
+    filtered.forEach(u => {
+      const badgeCls = { active:'badge-green', suspended:'badge-yellow',
+                         banned:'badge-red', closed:'badge-gray' }[u.status] || 'badge-gray';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="b">${esc(u.full_name)}</td>
+        <td class="text-xs">${esc(u.viber_phone)}</td>
+        <td class="mono" style="text-align:right">${fmt(u.coin_balance)}</td>
+        <td><span class="badge ${badgeCls}">${esc(u.status)}</span></td>
+        <td>
+          <div class="pill-group">
+            <button class="btn btn-primary btn-sm" data-topup>Coin</button>
+            ${u.status !== 'active' ? '<button class="btn btn-success btn-sm" data-set="active">Open</button>' : ''}
+            ${u.status !== 'suspended' ? '<button class="btn btn-warning btn-sm" data-set="suspended">Susp</button>' : ''}
+            ${u.status !== 'banned' ? '<button class="btn btn-danger btn-sm" data-set="banned">Ban</button>' : ''}
+          </div>
+        </td>`;
+      tr.querySelector('[data-topup]').onclick = () => openTopup(u);
+      tr.querySelectorAll('[data-set]').forEach(b => b.onclick = () => setUserStatus(u, b.dataset.set));
+      tb.appendChild(tr);
+    });
+  };
+  renderRows();
+  $('userSearch').oninput = e => renderRows(e.target.value);
+
+  function openTopup(u) {
+    $('topupBox').innerHTML = `
+      <h3>💰 Add Coin</h3>
+      <div style="background:#eef2ff;border-radius:12px;padding:12px;margin-bottom:12px">
+        <div class="b">${esc(u.full_name)}</div>
+        <div class="text-xs text-muted">${esc(u.viber_phone)}</div>
+        <div class="text-sm mt-2">Balance: <b class="mono">${fmt(u.coin_balance)}</b></div>
+      </div>
+      <label>Amount (+/-)</label>
+      <input class="input" id="tpAmount" inputmode="numeric" style="font-size:17px;font-weight:600" placeholder="5000" />
+      <div class="pill-group mt-2">
+        ${[1000,5000,10000,50000].map(v => `<span class="pill" data-amt="${v}">+${fmt(v)}</span>`).join('')}
+        <span class="pill" data-amt="-1000">-1,000</span>
+      </div>
+      <label>Note</label>
+      <input class="input" id="tpNote" />
+      <button class="btn btn-primary mt-3" style="width:100%" id="tpBtn">Confirm</button>
+      <button class="btn btn-ghost mt-2" style="width:100%" id="tpCancel">Cancel</button>`;
+    document.querySelectorAll('#topupBox .pill[data-amt]').forEach(p =>
+      p.onclick = () => $('tpAmount').value = p.dataset.amt);
+    $('tpCancel').onclick = () => renderUsers(c);
+    $('tpBtn').onclick = async () => {
+      const amt = Number($('tpAmount').value);
+      if (!amt) return toast('Enter amount', 'err');
+      const { data, error } = await sb.rpc('admin_add_coin', {
+        p_uid: currentUser.id, p_user: u.id, p_amount: amt,
+        p_note: $('tpNote').value || null
+      });
+      if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+      toast(`✅ ${amt > 0 ? '+' : ''}${fmt(amt)}`, 'ok');
+      renderUsers(c);
+    };
+  }
+  async function setUserStatus(u, status) {
+    if (!confirm(`${u.full_name} → ${status}?`)) return;
+    const { data, error } = await sb.rpc('admin_set_status', {
+      p_uid: currentUser.id, p_user: u.id, p_status: status
+    });
+    if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+    toast('✅ Updated', 'ok');
+    renderUsers(c);
+  }
+}
+
+async function renderPurchases(c) {
+  const { data } = await sb.from('purchases')
+    .select('*, users(full_name, viber_phone)')
+    .order('purchased_at', { ascending: false }).limit(500);
+  const rows = data || [];
+  c.innerHTML = `
+    <div class="card">
+      <div class="row between mb-2">
+        <input class="input" id="purSearch" placeholder="🔍 Search" style="flex:1;min-width:150px" />
+        <select class="input" id="statusFilter" style="max-width:150px">
+          <option value="">All</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" id="exportBtn">⬇️ CSV</button>
+      </div>
+      <div style="overflow:auto;max-height:600px">
+        <table><thead style="position:sticky;top:0;background:#fff;z-index:1">
+          <tr><th>User</th><th>Number</th><th style="text-align:right">Coin</th>
+          <th style="text-align:right">Total</th><th>Status</th><th>Time</th><th></th></tr>
+        </thead><tbody id="purBody"></tbody></table>
+      </div>
+    </div>`;
+  const tb = $('purBody');
+  let cur = [];
+  const render = () => {
+    const q = $('purSearch').value.trim();
+    const st = $('statusFilter').value;
+    tb.innerHTML = '';
+    cur = rows.filter(r =>
+      (!q || r.number.includes(q) || r.users?.full_name?.includes(q) || r.users?.viber_phone?.includes(q))
+      && (!st || r.status === st));
+    if (!cur.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">None</td></tr>'; return; }
+    cur.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${esc(r.users?.full_name)}<div class="text-xs text-muted">${esc(r.users?.viber_phone)}</div></td>
+        <td class="mono b" style="text-align:center">${esc(r.number)}</td>
+        <td style="text-align:right" class="mono">${fmt(r.amount)}</td>
+        <td style="text-align:right" class="b text-green mono">${fmt(r.total)}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td class="text-xs text-muted">${fmtDT(r.purchased_at)}</td>
+        <td>
+          <div class="pill-group">
+            <button class="btn btn-ghost btn-sm" data-edit>Edit</button>
+            <button class="btn btn-danger btn-sm" data-del>Del</button>
+          </div>
+        </td>`;
+      tr.querySelector('[data-edit]').onclick = async () => {
+        const n = prompt('Number', r.number); if (!n) return;
+        const a = prompt('Amount', String(r.amount)); if (!a) return;
+        const { data, error } = await sb.rpc('admin_update_purchase', {
+          p_uid: currentUser.id, p_id: r.id,
+          p_number: n.trim().padStart(3,'0'), p_amount: Number(a)
+        });
+        if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+        toast('✅ Updated', 'ok');
+        renderPurchases(c);
+      };
+      tr.querySelector('[data-del]').onclick = async () => {
+        if (!confirm('Delete?')) return;
+        const { data, error } = await sb.rpc('admin_delete_purchase', {
+          p_uid: currentUser.id, p_id: r.id
+        });
+        if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+        toast('✅ Deleted', 'ok');
+        renderPurchases(c);
+      };
+      tb.appendChild(tr);
+    });
+  };
+  render();
+  $('purSearch').oninput = render;
+  $('statusFilter').onchange = render;
+  $('exportBtn').onclick = () => {
+    const rowsCsv = [['Name','Viber','Number','Coin','Total','Status','Time']];
+    cur.forEach(r => rowsCsv.push([
+      r.users?.full_name || '', r.users?.viber_phone || '', r.number,
+      r.amount, r.total, r.status, fmtDT(r.purchased_at)
+    ]));
+    exportCSV(rowsCsv, 'purchases_' + monthKey());
+  };
+}
+
+async function renderPartnersAdmin(c) {
+  const { data } = await sb.from('partners')
+    .select('*, users(full_name, viber_phone)')
+    .order('created_at', { ascending: false }).limit(1000);
+  const rows = data || [];
+  c.innerHTML = `
+    <div class="card">
+      <div class="row between mb-2">
+        <input class="input" id="adPtSearch" placeholder="🔍 Search" style="flex:1" />
+        <button class="btn btn-ghost btn-sm" id="adPtExport">⬇️ CSV</button>
+        <span class="text-xs text-muted">${rows.length} records</span>
+      </div>
+      <div style="overflow:auto;max-height:640px">
+        <table><thead style="position:sticky;top:0;background:#fff;z-index:1">
+          <tr><th>User</th><th>Number</th><th>Partner</th><th>Phone</th>
+          <th style="text-align:right">Coin</th><th>Note</th><th>Date</th></tr>
+        </thead><tbody id="adPtBody"></tbody></table>
+      </div>
+    </div>`;
+  const tb = $('adPtBody');
+  let cur = [];
+  const render = () => {
+    const q = $('adPtSearch').value.trim().toLowerCase();
+    tb.innerHTML = '';
+    cur = rows.filter(r =>
+      !q || r.number.includes(q) || (r.partner_name||'').toLowerCase().includes(q)
+        || (r.partner_phone||'').includes(q) || (r.users?.full_name||'').toLowerCase().includes(q)
+        || (r.users?.viber_phone||'').includes(q));
+    if (!cur.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">None</td></tr>'; return; }
+    cur.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${esc(r.users?.full_name)}<div class="text-xs text-muted">${esc(r.users?.viber_phone)}</div></td>
+        <td class="mono b" style="text-align:center">${esc(r.number)}</td>
+        <td class="b">${esc(r.partner_name)}</td>
+        <td class="text-xs">${esc(r.partner_phone || '-')}</td>
+        <td style="text-align:right" class="mono">${fmt(r.coin_amount)}</td>
+        <td class="text-xs text-muted">${esc(r.note || '-')}</td>
+        <td class="text-xs text-muted">${fmtDT(r.created_at)}</td>`;
+      tb.appendChild(tr);
+    });
+  };
+  render();
+  $('adPtSearch').oninput = render;
+  $('adPtExport').onclick = () => {
+    const rowsCsv = [['User','Viber','Number','Partner','Phone','Coin','Note','Date']];
+    cur.forEach(r => rowsCsv.push([
+      r.users?.full_name || '', r.users?.viber_phone || '', r.number,
+      r.partner_name, r.partner_phone, r.coin_amount, r.note || '', fmtDT(r.created_at)
+    ]));
+    exportCSV(rowsCsv, 'partners_' + monthKey());
+  };
+}
+
+async function renderSummary(c) {
+  c.innerHTML = `
+    <div class="card">
+      <div class="row between mb-3">
+        <input type="month" class="input" id="sumMonth" value="${monthKey()}" style="max-width:200px" />
+        <div>Total: <b class="text-green mono" id="sumGrand">0</b></div>
+        <button class="btn btn-ghost btn-sm" id="expSum">⬇️ CSV</button>
+      </div>
+      <div id="sumBox"></div>
+    </div>`;
+  let lastData = [];
+  const load = async () => {
+    const m = $('sumMonth').value;
+    const { data } = await sb.from('purchases')
+      .select('number, total, users(full_name)')
+      .eq('month_key', m).eq('status', 'approved');
+    const map = {}, det = {};
+    (data||[]).forEach(p => {
+      map[p.number] = (map[p.number]||0) + Number(p.total);
+      (det[p.number] = det[p.number]||[]).push(p);
+    });
+    const sorted = Object.entries(map).sort((a,b) => b[1] - a[1]);
+    lastData = sorted.map(([n,t]) => ({ number: n, total: t, buyers: det[n] }));
+    $('sumGrand').textContent = fmt(sorted.reduce((a,b) => a+b[1], 0));
+    const box = $('sumBox'); box.innerHTML = '';
+    if (!sorted.length) { box.innerHTML = '<div class="empty">No data</div>'; return; }
+    const grid = document.createElement('div'); grid.className = 'grid-3';
+    sorted.forEach(([n, t]) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.cssText = 'margin:0;padding:0;overflow:hidden';
+      card.innerHTML = `
+        <div class="row between" style="padding:12px;cursor:pointer" data-toggle>
+          <span class="mono b" style="font-size:18px">${esc(n)}</span>
+          <span class="b text-green mono">${fmt(t)}</span>
+        </div>
+        <div class="hide" style="border-top:1px solid var(--border);background:#f8fafc;padding:8px;font-size:11px" data-detail>
+          ${det[n].map(d => `<div class="row between" style="padding:2px 0">
+            <span>${esc(d.users?.full_name)}</span><span class="mono">${fmt(d.total)}</span>
+          </div>`).join('')}
+        </div>`;
+      card.querySelector('[data-toggle]').onclick = () =>
+        card.querySelector('[data-detail]').classList.toggle('hide');
+      grid.appendChild(card);
+    });
+    box.appendChild(grid);
+  };
+  await load();
+  $('sumMonth').onchange = load;
+  $('expSum').onclick = () => {
+    if (!lastData.length) return toast('No data', 'err');
+    const rowsCsv = [['Number','Name','Amount']];
+    lastData.forEach(d => d.buyers.forEach(b =>
+      rowsCsv.push([d.number, b.users?.full_name || '', b.total])));
+    exportCSV(rowsCsv, 'summary_' + $('sumMonth').value);
+  };
+}
+
+async function renderRules(c) {
+  const { data } = await sb.from('number_rules').select('*').order('number');
+  const rules = data || [];
+  c.innerHTML = `
+    <div class="card">
+      <div class="row between mb-2">
+        <input class="input" id="ruleSearch" placeholder="🔍 000-999" maxlength="3"
+          inputmode="numeric" style="flex:1" />
+        <div class="text-xs text-muted">${rules.length} numbers</div>
+      </div>
+      <div class="info-box mb-2">Limit သတ်မှတ်ရင် total ရောက်တာနဲ့ auto-close။</div>
+      <div style="overflow:auto;max-height:600px">
+        <table><thead style="position:sticky;top:0;background:#fff;z-index:1">
+          <tr><th>Number</th><th>Status</th><th>Limit</th><th>Sold</th><th></th></tr>
+        </thead><tbody id="ruleBody"></tbody></table>
+      </div>
+    </div>`;
+  const month = monthKey();
+  const { data: salesData } = await sb.from('purchases')
+    .select('number, total').eq('month_key', month).in('status', ['pending','approved']);
+  const sold = {};
+  (salesData || []).forEach(p => sold[p.number] = (sold[p.number]||0) + Number(p.total));
+  const tb = $('ruleBody');
+  const render = (q = '') => {
+    tb.innerHTML = '';
+    const filtered = q ? rules.filter(r => r.number.includes(q)) : rules;
+    filtered.forEach(r => {
+      const total = sold[r.number] || 0;
+      const limit = r.max_amount;
+      const reached = limit != null && total >= Number(limit);
+      let statusBadge = '';
+      if (r.auto_closed) statusBadge = '<span class="badge badge-red">🔴 Auto</span>';
+      else if (r.is_closed) statusBadge = '<span class="badge badge-gray">⚪ Closed</span>';
+      else if (reached) statusBadge = '<span class="badge badge-yellow">🟡 Limit</span>';
+      else statusBadge = '<span class="badge badge-green">🟢 Open</span>';
+      const tr = document.createElement('tr');
+      if (reached || r.auto_closed) tr.style.background = '#fef2f2';
+      tr.innerHTML = `
+        <td class="mono b" style="text-align:center;font-size:14px">${esc(r.number)}</td>
+        <td style="text-align:center">
+          ${statusBadge}
+          <div class="mt-2"><input type="checkbox" ${r.is_closed ? 'checked' : ''} data-closed />
+          <span class="text-xs">Close</span></div>
+        </td>
+        <td style="text-align:center">
+          <input class="input" style="width:110px;text-align:center;padding:6px;font-size:12px"
+            data-max value="${r.max_amount ?? ''}" placeholder="∞" inputmode="numeric" />
+        </td>
+        <td style="text-align:center" class="mono">
+          <b>${fmt(total)}</b>${limit != null ? `<div class="text-xs text-muted">/ ${fmt(limit)}</div>` : ''}
+        </td>
+        <td style="text-align:center"><button class="btn btn-primary btn-sm" data-save>Save</button></td>`;
+      tr.querySelector('[data-save]').onclick = async () => {
+        const is_closed = tr.querySelector('[data-closed]').checked;
+        const maxV = tr.querySelector('[data-max]').value.replace(/\D/g,'');
+        const { data, error } = await sb.rpc('admin_set_number_rule', {
+          p_uid: currentUser.id, p_number: r.number,
+          p_is_closed: is_closed, p_max_amount: maxV ? Number(maxV) : null
+        });
+        if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+        toast(`✅ ${r.number} saved`, 'ok');
+        renderRules(c);
+      };
+      tb.appendChild(tr);
+    });
+    if (!filtered.length) tb.innerHTML = '<tr><td colspan="5" class="empty">None</td></tr>';
+  };
+  render();
+  $('ruleSearch').oninput = e => {
+    e.target.value = e.target.value.replace(/\D/g,'');
+    render(e.target.value);
+  };
+}
+
+async function renderSales(c) {
+  const { data: s } = await sb.from('settings').select('*').eq('id', 1).single();
+  c.innerHTML = `
+    <div class="grid-2">
+      <div class="card">
+        <h3>⏰ Sales Window</h3>
+        <label>📅 Open Date & Time</label>
+        <div class="dt-row">
+          <input type="date" class="input" id="openDate" />
+          <input type="time" class="input" id="openTime" step="60" />
+          <select class="input" id="openAmpm"><option>AM</option><option>PM</option></select>
+        </div>
+        <label>📅 Close Date & Time</label>
+        <div class="dt-row">
+          <input type="date" class="input" id="closeDate" />
+          <input type="time" class="input" id="closeTime" step="60" />
+          <select class="input" id="closeAmpm"><option>AM</option><option>PM</option></select>
+        </div>
+        <div class="info-box mt-2" id="rangePreview">Open: - <br>Close: -</div>
+        <div class="row mt-3">
+          <button class="btn btn-success flex-1" id="openBtn">🟢 Open Now</button>
+          <button class="btn btn-danger flex-1" id="closeBtn">🔒 Close Now</button>
+        </div>
+        <button class="btn btn-primary mt-2" style="width:100%" id="saveRange">💾 Save Schedule</button>
+      </div>
+      <div class="card">
+        <h3>⚙️ Settings</h3>
+        <label>Bonus %</label>
+        <input class="input" id="bonus" value="${s.bonus_percent}" />
+        <label>Edit window (min)</label>
+        <input class="input" id="window" value="${s.edit_window_minutes}" />
+        <label style="margin-top:14px">
+          <input type="checkbox" id="requireApproval" ${s.require_approval ? 'checked' : ''} />
+          Require Admin Approval
+        </label>
+        <button class="btn btn-primary mt-3" style="width:100%" id="saveSettings">Save</button>
+        <div class="info-box mt-2">
+          5,000 × (1 + <span id="exB">${s.bonus_percent}</span>/100) = <b id="exT">${fmt(5000 * (1 + s.bonus_percent/100))}</b>
+        </div>
+        <div class="mt-3">
+          <h4 class="text-sm b">Current State</h4>
+          <div class="text-sm mt-2">
+            <div class="row between" style="padding:4px 0"><span>Closed</span><b>${s.sales_closed ? '🔒 Yes' : '🟢 No'}</b></div>
+            <div class="row between" style="padding:4px 0"><span>Open At</span><b class="mono">${s.sales_open_at ? fmtDT(s.sales_open_at) : 'Immediate'}</b></div>
+            <div class="row between" style="padding:4px 0"><span>Close At</span><b class="mono">${s.sales_close_at ? fmtDT(s.sales_close_at) : 'Not set'}</b></div>
+            <div class="row between" style="padding:4px 0"><span>Require Approval</span><b>${s.require_approval ? '✅' : '❌'}</b></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  const parseISO = (iso) => {
+    if (!iso) return { d: '', t: '', ap: 'AM' };
+    const d = new Date(iso);
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year:'numeric', month:'2-digit', day:'2-digit' }).format(d).split('-');
+    const tp = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour:'2-digit', minute:'2-digit', hour12:true }).formatToParts(d);
+    let hh = '12', mm = '00', ap = 'AM';
+    tp.forEach(p => {
+      if (p.type === 'hour') hh = p.value;
+      if (p.type === 'minute') mm = p.value;
+      if (p.type === 'dayPeriod') ap = p.value.toUpperCase();
+    });
+    return { d: parts.join('-'), t: `${hh}:${mm}`, ap };
+  };
+  const openP = parseISO(s.sales_open_at);
+  const closeP = parseISO(s.sales_close_at);
+  $('openDate').value = openP.d; $('openTime').value = openP.t; $('openAmpm').value = openP.ap;
+  $('closeDate').value = closeP.d; $('closeTime').value = closeP.t; $('closeAmpm').value = closeP.ap;
+
+  const combine = (dateStr, timeStr, ampm) => {
+    if (!dateStr) return null;
+    let [hh, mm] = (timeStr || '12:00').split(':').map(Number);
+    if (ampm === 'PM' && hh < 12) hh += 12;
+    if (ampm === 'AM' && hh === 12) hh = 0;
+    const iso = `${dateStr}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00+06:30`;
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  };
+  const updateRange = () => {
+    const o = combine($('openDate').value, $('openTime').value, $('openAmpm').value);
+    const cl = combine($('closeDate').value, $('closeTime').value, $('closeAmpm').value);
+    $('rangePreview').innerHTML = `
+      Open: <b>${o ? fmtDT(o) : '(Immediate)'}</b><br>
+      Close: <b>${cl ? fmtDT(cl) : '(Not set)'}</b>`;
+  };
+  ['openDate','openTime','openAmpm','closeDate','closeTime','closeAmpm'].forEach(id => {
+    $(id).oninput = updateRange; $(id).onchange = updateRange;
+  });
+  updateRange();
+  const updateEx = () => {
+    const b = Number($('bonus').value) || 0;
+    $('exB').textContent = b;
+    $('exT').textContent = fmt(Math.round(5000 * (1 + b/100)));
+  };
+  $('bonus').oninput = updateEx;
+  const save = async (closedVal) => {
+    const o = combine($('openDate').value, $('openTime').value, $('openAmpm').value);
+    const cl = combine($('closeDate').value, $('closeTime').value, $('closeAmpm').value);
+    const { data, error } = await sb.rpc('admin_update_settings', {
+      p_uid: currentUser.id, p_sales_closed: closedVal,
+      p_sales_open_at: o, p_sales_close_at: cl,
+      p_bonus: Number($('bonus').value), p_window: Number($('window').value),
+      p_require_approval: $('requireApproval').checked
+    });
+    if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+    toast('✅ Saved', 'ok');
+    renderSales(c);
+  };
+  $('openBtn').onclick = () => save(false);
+  $('closeBtn').onclick = () => save(true);
+  $('saveRange').onclick = () => save(s.sales_closed);
+  $('saveSettings').onclick = () => save(s.sales_closed);
+}
+
+async function renderDraw(c) {
+  const { data: draws } = await sb.from('draws').select('*').order('announced_at', { ascending: false });
+  c.innerHTML = `
+    <div class="grid-2" style="align-items:start">
+      <div class="card">
+        <h3>🎉 Lucky Number</h3>
+        <label>Month</label>
+        <input type="month" class="input" id="drawMonth" value="${monthKey()}" />
+        <label>Lucky Number (000-999)</label>
+        <input class="input mono" id="luckyNum" maxlength="3" inputmode="numeric"
+          style="text-align:center;font-size:30px;font-weight:800;padding:14px" placeholder="000" />
+        <button class="btn btn-warning mt-3" style="width:100%" id="announceBtn">🎉 Announce</button>
+        <h4 class="mt-3 text-sm b">Previous</h4>
+        <div id="drawList" style="max-height:250px;overflow:auto;margin-top:8px"></div>
+      </div>
+      <div class="card" id="drawResult"><p class="text-muted">Select a draw</p></div>
+    </div>`;
+  $('luckyNum').oninput = e => e.target.value = e.target.value.replace(/\D/g,'').slice(0,3);
+  const dList = $('drawList');
+  if (!draws?.length) dList.innerHTML = '<div class="text-xs text-muted">None yet</div>';
+  draws?.forEach(d => {
+    const b = document.createElement('button');
+    b.className = 'btn btn-ghost mb-2';
+    b.style.cssText = 'width:100%;text-align:left;display:flex;justify-content:space-between';
+    b.innerHTML = `<span class="mono b" style="font-size:16px">${esc(d.lucky_number)}</span>
+                   <span class="text-xs text-muted">${esc(d.month_key)}</span>`;
+    b.onclick = () => showDrawResult(d);
+    dList.appendChild(b);
+  });
+  async function showDrawResult(d) {
+    const { data: ws } = await sb.from('draw_winners')
+      .select('*, users(full_name, viber_phone)').eq('draw_id', d.id);
+    const { data: buyers } = await sb.from('purchases')
+      .select('*, users(full_name, viber_phone)')
+      .eq('number', d.lucky_number).eq('month_key', d.month_key).eq('status', 'approved');
+    const box = $('drawResult');
+    let html = `<h3>Result — <span class="mono" style="font-size:24px;color:#d97706">${esc(d.lucky_number)}</span>
+                <span class="text-xs text-muted">${esc(d.month_key)}</span></h3>`;
+    if (!ws?.length) html += '<div class="empty">No winner</div>';
+    else {
+      html += `<table><thead><tr><th>Name</th><th style="text-align:right">Paid</th>
+        <th>Refund</th><th>Status</th></tr></thead><tbody>`;
+      ws.forEach(w => {
+        html += `<tr>
+          <td>${esc(w.users?.full_name)}<div class="text-xs text-muted">${esc(w.users?.viber_phone)}</div></td>
+          <td style="text-align:right" class="mono">${fmt(w.paid_total)}</td>
+          <td style="text-align:center">
+            ${w.is_paid ? `<b class="text-green mono">${fmt(w.refund_coins)}</b>`
+              : `<input class="input mono" data-refund="${w.id}" value="${w.refund_coins || w.paid_total}"
+                  style="width:100px;text-align:center;padding:6px" inputmode="numeric" />`}
+          </td>
+          <td style="text-align:center">
+            ${w.is_paid ? '<span class="text-green text-xs">✅</span>'
+              : `<button class="btn btn-success btn-sm" data-pay="${w.id}">Pay</button>`}
+          </td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    if (buyers?.length) {
+      html += `<div class="info-box mt-3"><b>Buyers (${buyers.length})</b><br>
+        ${buyers.map(b => `${esc(b.users?.full_name)} (${fmt(b.total)})`).join(' · ')}</div>`;
+    }
+    box.innerHTML = html;
+    box.querySelectorAll('[data-pay]').forEach(btn => btn.onclick = async () => {
+      const id = btn.dataset.pay;
+      const amt = Number(box.querySelector(`[data-refund="${id}"]`).value);
+      if (!amt || amt < 0) return toast('Amount?', 'err');
+      const { data, error } = await sb.rpc('admin_pay_winner', {
+        p_uid: currentUser.id, p_winner: id, p_refund: amt
+      });
+      if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+      toast('✅ Paid', 'ok');
+      showDrawResult(d);
+    });
+  }
+  $('announceBtn').onclick = async () => {
+    const n = $('luckyNum').value;
+    const m = $('drawMonth').value;
+    if (!n || n.length !== 3) return toast('3 digits', 'err');
+    if (!confirm(`Announce ${n}?`)) return;
+    const { data, error } = await sb.rpc('admin_announce_draw', {
+      p_uid: currentUser.id, p_lucky_number: n, p_month_key: m, p_note: null
+    });
+    if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+    toast('✅ Announced', 'ok');
+    renderDraw(c);
+  };
+  if (draws?.[0]) showDrawResult(draws[0]);
+}
+
+async function renderReset(c) {
+  const { data: rows } = await sb.from('reset_requests').select('*')
+    .order('created_at', { ascending: false });
+  c.innerHTML = `
+    <div class="card">
+      <h3>🔑 Passcode Reset Requests</h3>
+      <div style="overflow:auto">
+        <table><thead><tr><th>Name</th><th>Viber</th><th>Requested</th><th>Status</th><th></th></tr></thead>
+        <tbody id="resetBody"></tbody></table>
+      </div>
+    </div>`;
+  const tb = $('resetBody');
+  if (!rows?.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">None</td></tr>'; return; }
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${esc(r.full_name || '-')}</td>
+      <td>${esc(r.viber_phone)}</td>
+      <td class="text-xs text-muted">${fmtDT(r.created_at)}</td>
+      <td><span class="badge ${r.status === 'pending' ? 'badge-yellow' : 'badge-green'}">${esc(r.status)}</span></td>
+      <td>${r.status === 'pending'
+        ? '<button class="btn btn-primary btn-sm" data-reset>Reset</button>'
+        : '<span class="text-xs text-muted">Done</span>'}</td>`;
+    const btn = tr.querySelector('[data-reset]');
+    if (btn) btn.onclick = async () => {
+      const newPass = prompt(`New passcode for ${r.viber_phone} (min 4)`);
+      if (!newPass || newPass.length < 4) return;
+      const { data: prof } = await sb.from('users').select('id')
+        .eq('viber_phone', r.viber_phone).maybeSingle();
+      if (!prof) return toast('❌ User not found', 'err');
+      const { data, error } = await sb.rpc('admin_reset_passcode', {
+        p_uid: currentUser.id, p_target: prof.id, p_new: newPass
+      });
+      if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+      await sb.from('reset_requests').update({ status: 'done', handled_at: new Date().toISOString() }).eq('id', r.id);
+      toast('✅ Done', 'ok');
+      renderReset(c);
+    };
+    tb.appendChild(tr);
+  });
+}
+
+function exportCSV(rows, filename) {
+  const csv = rows.map(r => r.map(c => {
+    const v = String(c ?? '');
+    return /[",\n]/.test(v) ? `"${v.replace(/"/g,'""')}"` : v;
+  }).join(',')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${filename}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+/* ═══════ BOOT ═══════ */
+function showAuthView() {
+  if (location.hash === '#admin') show('adminAuth');
+  else show('userAuth');
+}
+(async function boot() {
+  try {
+    const s = loadSession();
+    if (s) {
+      currentUser = s;
+      const fresh = await refreshUser();
+      if (fresh) {
+        if (fresh.role === 'super_admin') startAdmin();
+        else if (['suspended','banned','closed'].includes(fresh.status)) {
+          clearSession(); currentUser = null; showAuthView();
+        } else startDashboard();
+        return;
+      }
+    }
+    showAuthView();
+  } catch(e) { console.error(e); show('userAuth'); }
+})();
+</script>
+</body>
+</html>
