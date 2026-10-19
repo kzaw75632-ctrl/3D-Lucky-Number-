@@ -1,0 +1,2755 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>🎯 Lucky Number</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --primary:#6366f1;--primary-dark:#4338ca;--primary-light:#a5b4fc;
+    --violet:#8b5cf6;--pink:#ec4899;
+    --success:#10b981;--danger:#ef4444;--warning:#f59e0b;
+    --bg:#f1f5f9;--card:rgba(255,255,255,.86);
+    --text:#0f172a;--muted:#64748b;--border:rgba(226,232,240,.9);
+    --glow:0 0 25px rgba(99,102,241,.35);
+  }
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Myanmar Text','Pyidaungsu','Noto Sans Myanmar',system-ui,sans-serif;
+    color:var(--text);line-height:1.6;
+    background:linear-gradient(135deg,#eef2ff 0%,#f5f3ff 25%,#ecfdf5 50%,#f0f9ff 75%,#fdf2f8 100%);
+    background-size:400% 400%;
+    animation:bgShift 24s ease infinite;
+    min-height:100vh;
+    overflow-x:hidden;
+    position:relative;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* ── 5D floating orbs background ── */
+  body::before,body::after{
+    content:'';position:fixed;border-radius:50%;
+    filter:blur(90px);pointer-events:none;z-index:0;will-change:transform;
+  }
+  body::before{
+    width:520px;height:520px;top:-160px;left:-160px;
+    background:radial-gradient(circle,rgba(99,102,241,.55),transparent 70%);
+    animation:floatA 20s ease-in-out infinite;
+  }
+  body::after{
+    width:620px;height:620px;bottom:-220px;right:-220px;
+    background:radial-gradient(circle,rgba(16,185,129,.45),transparent 70%);
+    animation:floatB 26s ease-in-out infinite;
+  }
+  /* ── hide / show ── */
+  .hide{display:none!important}
+  /* ── main shells above background ── */
+  #loader,#userAuth,#adminAuth,#dashboard,#adminPanel{position:relative;z-index:1}
+  .container{max-width:1200px;margin:0 auto;padding:16px;position:relative;z-index:2}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .between{justify-content:space-between}
+
+  /* ═══ GLASS CARDS ═══ */
+  .card{
+    background:var(--card);
+    backdrop-filter:blur(22px) saturate(160%);
+    -webkit-backdrop-filter:blur(22px) saturate(160%);
+    border:1px solid rgba(255,255,255,.7);
+    border-radius:20px;padding:20px;margin-bottom:16px;
+    box-shadow:
+      0 8px 32px rgba(31,38,135,.10),
+      0 1px 3px rgba(0,0,0,.04),
+      inset 0 1px 0 rgba(255,255,255,.9);
+    transition:transform .45s cubic-bezier(.22,1.2,.36,1),box-shadow .45s;
+    transform-style:preserve-3d;
+    position:relative;
+    will-change:transform;
+  }
+  .card::before{
+    content:'';position:absolute;inset:0;border-radius:inherit;padding:1px;
+    background:linear-gradient(135deg,rgba(99,102,241,.4),rgba(236,72,153,.25),rgba(16,185,129,.3));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    opacity:0;transition:opacity .4s;pointer-events:none;
+  }
+  .card:hover::before{opacity:1}
+  .card:hover{
+    transform:translateY(-4px);
+    box-shadow:
+      0 22px 55px rgba(31,38,135,.18),
+      0 2px 6px rgba(0,0,0,.06),
+      inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  .card h3{margin-bottom:12px;font-size:17px;letter-spacing:.2px}
+
+  /* ═══ BUTTONS — 3D press ═══ */
+  .btn{
+    border:0;border-radius:12px;padding:10px 16px;font-weight:600;cursor:pointer;
+    font-family:inherit;font-size:13px;display:inline-flex;
+    align-items:center;justify-content:center;gap:6px;
+    transition:transform .28s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,filter .3s;
+    position:relative;overflow:hidden;
+    transform-style:preserve-3d;
+    will-change:transform;
+  }
+  .btn::after{
+    content:'';position:absolute;top:0;left:-120%;width:100%;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);
+    transition:left .6s;pointer-events:none;
+  }
+  .btn:hover:not(:disabled)::after{left:120%}
+  .btn:hover:not(:disabled){transform:translateY(-2px)}
+  .btn:active:not(:disabled){transform:translateY(1px) scale(.98)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn-primary{
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    color:#fff;box-shadow:0 6px 18px rgba(99,102,241,.4);
+  }
+  .btn-primary:hover:not(:disabled){box-shadow:0 10px 28px rgba(99,102,241,.6)}
+  .btn-success{
+    background:linear-gradient(135deg,#10b981,#059669);
+    color:#fff;box-shadow:0 6px 18px rgba(16,185,129,.4);
+  }
+  .btn-success:hover:not(:disabled){box-shadow:0 10px 28px rgba(16,185,129,.6)}
+  .btn-danger{
+    background:linear-gradient(135deg,#ef4444,#dc2626);
+    color:#fff;box-shadow:0 6px 18px rgba(239,68,68,.4);
+  }
+  .btn-danger:hover:not(:disabled){box-shadow:0 10px 28px rgba(239,68,68,.6)}
+  .btn-warning{
+    background:linear-gradient(135deg,#f59e0b,#d97706);
+    color:#fff;box-shadow:0 6px 18px rgba(245,158,11,.4);
+  }
+  .btn-warning:hover:not(:disabled){box-shadow:0 10px 28px rgba(245,158,11,.6)}
+  .btn-dark{
+    background:linear-gradient(135deg,#1e293b,#0f172a);
+    color:#fff;box-shadow:0 6px 18px rgba(15,23,42,.4);
+  }
+  .btn-ghost{
+    background:rgba(255,255,255,.7);backdrop-filter:blur(8px);
+    border:1px solid rgba(226,232,240,.9);color:var(--text);
+    box-shadow:0 3px 10px rgba(0,0,0,.05);
+  }
+  .btn-ghost:hover:not(:disabled){
+    background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.1);border-color:var(--primary-light)
+  }
+  .btn-sm{padding:5px 10px;font-size:11px;border-radius:9px}
+
+  /* ═══ INPUTS ═══ */
+  .input,select{
+    width:100%;border:1.5px solid rgba(226,232,240,.9);border-radius:12px;
+    padding:10px 12px;font-family:inherit;font-size:13px;outline:none;
+    background:rgba(255,255,255,.85);backdrop-filter:blur(8px);
+    transition:all .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .input:hover{border-color:var(--primary-light)}
+  .input:focus{
+    border-color:var(--primary);
+    background:#fff;
+    box-shadow:0 0 0 4px rgba(99,102,241,.14),0 6px 20px rgba(99,102,241,.12);
+    transform:translateY(-1px);
+  }
+  label{display:block;font-size:11px;color:var(--muted);margin:8px 0 4px;font-weight:600}
+
+  /* ═══ TABLES ═══ */
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{background:rgba(248,250,252,.9);padding:10px 8px;text-align:left;font-size:11px;
+    color:var(--muted);position:sticky;top:0;backdrop-filter:blur(10px)}
+  td{padding:9px 8px;border-bottom:1px solid rgba(226,232,240,.6);transition:background .25s}
+  tbody tr{transition:transform .25s,background .25s}
+  tbody tr:hover{background:linear-gradient(90deg,rgba(99,102,241,.06),rgba(139,92,246,.04))}
+  .mono{font-family:'Courier New',monospace;font-variant-numeric:tabular-nums}
+
+  /* ═══ BADGES ═══ */
+  .badge{border-radius:999px;padding:3px 10px;font-size:10px;font-weight:700;display:inline-block;
+    letter-spacing:.3px;transition:transform .3s}
+  .badge:hover{transform:scale(1.06)}
+  .badge-green{background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;
+    box-shadow:0 3px 10px rgba(16,185,129,.25)}
+  .badge-red{background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;
+    box-shadow:0 3px 10px rgba(239,68,68,.25)}
+  .badge-yellow{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;
+    box-shadow:0 3px 10px rgba(245,158,11,.25)}
+  .badge-gray{background:linear-gradient(135deg,#e2e8f0,#cbd5e1);color:#475569}
+  .badge-blue{background:linear-gradient(135deg,#dbeafe,#bfdbfe);color:#1e40af;
+    box-shadow:0 3px 10px rgba(59,130,246,.25)}
+
+  /* ═══ GRIDS ═══ */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  @media (max-width:900px){.grid-4{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:1fr 1fr}}
+  @media (max-width:768px){
+    .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+    .pad-grid{grid-template-columns:repeat(5,1fr)!important}
+  }
+
+  /* ═══ AUTH PAGES ═══ */
+  .auth-page{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+    background:transparent;position:relative;
+  }
+  .auth-page.dark{background:linear-gradient(135deg,#0b1220,#1e293b)}
+  .auth-page.dark::before{
+    content:'';position:absolute;inset:0;
+    background:
+      radial-gradient(circle at 20% 30%,rgba(99,102,241,.35),transparent 55%),
+      radial-gradient(circle at 80% 70%,rgba(236,72,153,.3),transparent 55%),
+      radial-gradient(circle at 50% 100%,rgba(16,185,129,.3),transparent 60%);
+    animation:bgShift 18s ease infinite;
+    background-size:200% 200%;
+    pointer-events:none;
+  }
+  .auth-card{
+    width:100%;max-width:430px;
+    background:rgba(255,255,255,.92);
+    backdrop-filter:blur(30px) saturate(180%);
+    -webkit-backdrop-filter:blur(30px) saturate(180%);
+    border-radius:24px;padding:28px;
+    border:1px solid rgba(255,255,255,.9);
+    box-shadow:
+      0 25px 70px rgba(31,38,135,.18),
+      0 0 0 1px rgba(255,255,255,.5) inset,
+      0 1px 0 rgba(255,255,255,.9) inset;
+    animation:cardEntry .9s cubic-bezier(.34,1.56,.64,1);
+    position:relative;
+    transform-style:preserve-3d;
+  }
+  .auth-page.dark .auth-card{
+    background:rgba(30,41,59,.85);
+    border:1px solid rgba(255,255,255,.1);
+    color:#f1f5f9;
+  }
+  .auth-page.dark .auth-card label{color:#94a3b8}
+  .auth-page.dark .auth-card .input{
+    background:rgba(15,23,42,.6);color:#f1f5f9;border-color:rgba(148,163,184,.25)
+  }
+  .auth-page.dark .auth-card .input:focus{border-color:#6366f1;background:rgba(15,23,42,.9)}
+
+  /* ═══ TABS ═══ */
+  .tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);
+    overflow-x:auto;position:relative}
+  .tab{
+    padding:10px 12px;border:0;background:0;cursor:pointer;font-size:12px;color:var(--muted);
+    border-bottom:2px solid transparent;font-family:inherit;white-space:nowrap;
+    transition:color .3s,transform .3s;position:relative;
+  }
+  .tab:hover{color:var(--text);transform:translateY(-1px)}
+  .tab.active{color:var(--primary);font-weight:700}
+  .tab.active::after{
+    content:'';position:absolute;left:15%;right:15%;bottom:-1px;height:3px;border-radius:3px;
+    background:linear-gradient(90deg,transparent,var(--primary),transparent);
+    animation:pulseBar 2.2s ease-in-out infinite;
+    box-shadow:0 0 12px rgba(99,102,241,.6);
+  }
+
+  /* ═══ HEADER ═══ */
+  .app-header{
+    background:rgba(15,23,42,.85);
+    backdrop-filter:blur(22px) saturate(180%);
+    -webkit-backdrop-filter:blur(22px) saturate(180%);
+    color:#fff;padding:12px 0;position:sticky;top:0;z-index:100;
+    border-bottom:1px solid rgba(255,255,255,.08);
+    box-shadow:0 6px 30px rgba(0,0,0,.25);
+  }
+  .app-header .container{display:flex;justify-content:space-between;align-items:center;
+    gap:12px;flex-wrap:wrap}
+  .clock{
+    background:linear-gradient(135deg,rgba(99,102,241,.25),rgba(139,92,246,.2));
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:12px;padding:6px 14px;text-align:right;line-height:1.2;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.15);
+  }
+  .clock .t{font-size:20px;font-family:'Courier New',monospace;font-weight:700;
+    text-shadow:0 0 12px rgba(99,102,241,.9);letter-spacing:1px}
+  .clock .d{font-size:10px;opacity:.75}
+
+  /* ═══ NUMBER PAD ═══ */
+  .pad-grid{
+    display:grid;grid-template-columns:repeat(10,1fr);gap:6px;max-height:460px;
+    overflow-y:auto;padding:6px;perspective:900px;
+  }
+  .num-btn{
+    position:relative;border:1.5px solid rgba(226,232,240,.9);
+    background:linear-gradient(180deg,#ffffff,#f8fafc);
+    border-radius:10px;padding:9px 2px;
+    font-family:'Courier New',monospace;font-size:12px;font-weight:700;
+    cursor:pointer;transition:all .25s cubic-bezier(.34,1.56,.64,1);
+    transform-style:preserve-3d;will-change:transform;
+  }
+  .num-btn:hover:not(:disabled){
+    background:linear-gradient(180deg,#eef2ff,#e0e7ff);
+    border-color:var(--primary);
+    transform:translateY(-3px) scale(1.06);
+    box-shadow:0 10px 22px rgba(99,102,241,.28);
+    z-index:2;
+  }
+  .num-btn.selected{
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    color:#fff;border-color:transparent;
+    transform:translateY(-3px) scale(1.08);
+    box-shadow:0 0 0 2px rgba(99,102,241,.35),0 12px 30px rgba(99,102,241,.55);
+    animation:pulseSelect 1.6s ease-in-out infinite;
+    z-index:3;
+  }
+  .num-btn:disabled{
+    background:linear-gradient(180deg,#f8fafc,#f1f5f9);
+    color:#cbd5e1;cursor:not-allowed;text-decoration:line-through;opacity:.7;
+  }
+  .num-btn .dot{
+    position:absolute;top:-6px;right:-6px;
+    background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;
+    border-radius:999px;font-size:9px;padding:2px 6px;
+    font-family:system-ui;font-weight:800;
+    box-shadow:0 4px 10px rgba(245,158,11,.5);
+    animation:bounce 2.4s ease-in-out infinite;
+    z-index:4;
+  }
+  .num-btn.auto-closed{
+    background:linear-gradient(135deg,#fef2f2,#fee2e2);
+    color:#991b1b;border-color:#fca5a5;
+    animation:pulseDanger 2s ease-in-out infinite;
+  }
+
+  /* ═══ COIN CARD (5D shimmer) ═══ */
+  .coin-card{
+    background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 45%,#ec4899 100%);
+    background-size:220% 220%;
+    animation:bgShift 8s ease infinite;
+    color:#fff;border-radius:20px;padding:20px;
+    box-shadow:0 18px 45px rgba(99,102,241,.45),inset 0 1px 0 rgba(255,255,255,.25);
+    position:relative;overflow:hidden;
+    transform-style:preserve-3d;
+    transition:transform .5s cubic-bezier(.34,1.56,.64,1),box-shadow .5s;
+  }
+  .coin-card::after{
+    content:'';position:absolute;top:0;left:-120%;width:60%;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);
+    transform:skewX(-25deg);
+    animation:shine 4.5s ease-in-out infinite;
+    pointer-events:none;
+  }
+  .coin-card:hover{
+    transform:translateY(-5px) rotateX(2deg);
+    box-shadow:0 28px 60px rgba(99,102,241,.6);
+  }
+  .coin-card .lbl{font-size:11px;opacity:.9;letter-spacing:.4px}
+  .coin-card .val{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums;
+    text-shadow:0 2px 15px rgba(0,0,0,.15)}
+
+  /* ═══ TOAST ═══ */
+  .toast{
+    position:fixed;top:20px;right:20px;left:20px;z-index:9999;
+    background:rgba(15,23,42,.95);
+    backdrop-filter:blur(20px);
+    color:#fff;padding:13px 20px;border-radius:14px;
+    box-shadow:0 20px 50px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.15);
+    font-size:13px;max-width:340px;margin-left:auto;
+    animation:toastIn .45s cubic-bezier(.34,1.56,.64,1);
+    border:1px solid rgba(255,255,255,.1);
+  }
+  .toast.err{
+    background:linear-gradient(135deg,rgba(239,68,68,.96),rgba(220,38,38,.96));
+    box-shadow:0 20px 50px rgba(239,68,68,.5);
+  }
+  .toast.ok{
+    background:linear-gradient(135deg,rgba(16,185,129,.96),rgba(5,150,105,.96));
+    box-shadow:0 20px 50px rgba(16,185,129,.5);
+  }
+  .toast.warn{
+    background:linear-gradient(135deg,rgba(245,158,11,.96),rgba(217,119,6,.96));
+    box-shadow:0 20px 50px rgba(245,158,11,.5);
+  }
+
+  /* ═══ UTILITIES ═══ */
+  .empty{text-align:center;color:var(--muted);padding:32px}
+  .mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}.mt-2{margin-top:8px}.mt-3{margin-top:12px}
+  .text-sm{font-size:12px}.text-xs{font-size:10px}.text-muted{color:var(--muted)}
+  .text-green{color:var(--success)}.text-red{color:var(--danger)}.text-amber{color:var(--warning)}
+  .b{font-weight:700}
+  .flex-1{flex:1}
+
+  /* ═══ PILLS ═══ */
+  .pill-group{display:flex;gap:6px;flex-wrap:wrap}
+  .pill{
+    background:linear-gradient(180deg,#fff,#f8fafc);
+    border:1.5px solid rgba(226,232,240,.9);border-radius:999px;
+    padding:5px 13px;font-size:11px;cursor:pointer;font-family:inherit;
+    transition:all .25s cubic-bezier(.34,1.56,.64,1);
+    box-shadow:0 2px 6px rgba(0,0,0,.04);
+  }
+  .pill:hover{
+    background:linear-gradient(180deg,#eef2ff,#e0e7ff);
+    border-color:var(--primary);
+    transform:translateY(-2px);
+    box-shadow:0 8px 18px rgba(99,102,241,.22);
+  }
+  .pill:active{transform:translateY(0) scale(.97)}
+
+  /* ═══ ANNOUNCE ═══ */
+  .announce{
+    background:linear-gradient(135deg,rgba(255,251,235,.95),rgba(254,243,199,.9));
+    backdrop-filter:blur(14px);
+    border:2px solid rgba(245,158,11,.7);
+    border-radius:20px;padding:18px;margin-bottom:16px;
+    box-shadow:0 12px 35px rgba(245,158,11,.25),inset 0 1px 0 rgba(255,255,255,.6);
+    animation:announceGlow 3.5s ease-in-out infinite;
+    position:relative;overflow:hidden;
+  }
+  .announce::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.6),transparent 50%);
+    pointer-events:none;
+  }
+  .announce .num{
+    font-family:'Courier New',monospace;font-size:42px;font-weight:900;
+    background:linear-gradient(135deg,#d97706,#f59e0b,#d97706);
+    background-size:200% 200%;
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:bgShift 3s ease infinite,glowText 2s ease-in-out infinite;
+    letter-spacing:4px;
+  }
+
+  /* ═══ PASSWORD TOGGLE ═══ */
+  .pass-wrap{position:relative}
+  .pass-toggle{
+    position:absolute;right:10px;top:50%;transform:translateY(-50%);
+    border:0;background:0;cursor:pointer;font-size:16px;padding:4px;opacity:.65;
+    transition:opacity .3s,transform .3s;
+  }
+  .pass-toggle:hover{opacity:1;transform:translateY(-50%) scale(1.15)}
+
+  /* ═══ INFO BOXES ═══ */
+  .info-box{
+    background:linear-gradient(135deg,rgba(238,242,255,.9),rgba(224,231,255,.7));
+    border-radius:12px;padding:11px 13px;font-size:11px;color:#3730a3;
+    margin-top:10px;border:1px solid rgba(199,210,254,.6);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+  }
+  .warn-box{
+    background:linear-gradient(135deg,rgba(254,243,199,.9),rgba(253,230,138,.7));
+    border-radius:12px;padding:11px 13px;font-size:11px;color:#78350f;
+    margin-top:10px;border:1px solid rgba(252,211,77,.5);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+  }
+  .success-box{
+    background:linear-gradient(135deg,rgba(209,250,229,.9),rgba(167,243,208,.7));
+    border-radius:12px;padding:11px 13px;font-size:11px;color:#065f46;
+    margin-top:10px;border:1px solid rgba(110,231,183,.6);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
+  }
+
+  /* ═══ STAT CARDS (5D) ═══ */
+  .stat-card{
+    background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px;
+    transition:transform .5s cubic-bezier(.34,1.56,.64,1),box-shadow .5s;
+    position:relative;overflow:hidden;
+    transform-style:preserve-3d;will-change:transform;
+    box-shadow:0 8px 24px rgba(15,23,42,.08);
+  }
+  .stat-card::before{
+    content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+    background:linear-gradient(45deg,transparent 40%,rgba(255,255,255,.28) 50%,transparent 60%);
+    transform:rotate(25deg);transition:transform .9s;
+    pointer-events:none;
+  }
+  .stat-card:hover::before{transform:rotate(25deg) translate(60%,60%)}
+  .stat-card:hover{
+    transform:translateY(-6px) scale(1.02);
+    box-shadow:0 24px 55px rgba(15,23,42,.2);
+  }
+  .stat-grad-1{
+    background:linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7);
+    background-size:180% 180%;
+    animation:bgShift 9s ease infinite;
+    color:#fff;border:0;box-shadow:0 15px 35px rgba(99,102,241,.35)
+  }
+  .stat-grad-2{
+    background:linear-gradient(135deg,#10b981,#059669,#047857);
+    background-size:180% 180%;animation:bgShift 9s ease infinite;
+    color:#fff;border:0;box-shadow:0 15px 35px rgba(16,185,129,.35)
+  }
+  .stat-grad-3{
+    background:linear-gradient(135deg,#f59e0b,#d97706,#b45309);
+    background-size:180% 180%;animation:bgShift 9s ease infinite;
+    color:#fff;border:0;box-shadow:0 15px 35px rgba(245,158,11,.35)
+  }
+  .stat-grad-4{
+    background:linear-gradient(135deg,#ef4444,#dc2626,#b91c1c);
+    background-size:180% 180%;animation:bgShift 9s ease infinite;
+    color:#fff;border:0;box-shadow:0 15px 35px rgba(239,68,68,.35)
+  }
+  .stat-grad-5{
+    background:linear-gradient(135deg,#06b6d4,#0891b2,#0e7490);
+    background-size:180% 180%;animation:bgShift 9s ease infinite;
+    color:#fff;border:0;box-shadow:0 15px 35px rgba(6,182,212,.35)
+  }
+
+  /* ═══ LOADING ═══ */
+  .loading{
+    display:inline-block;width:14px;height:14px;border:2px solid currentColor;
+    border-top-color:transparent;border-radius:50%;
+    animation:spin .65s linear infinite,glowSpin 1.6s ease-in-out infinite;
+  }
+
+  /* ═══ ADMIN NAV ═══ */
+  .admin-nav{
+    background:rgba(255,255,255,.82);
+    backdrop-filter:blur(18px) saturate(160%);
+    -webkit-backdrop-filter:blur(18px) saturate(160%);
+    border-bottom:1px solid rgba(226,232,240,.7);
+    overflow-x:auto;position:sticky;top:64px;z-index:99;
+    box-shadow:0 4px 20px rgba(15,23,42,.06);
+  }
+  .admin-nav .tabs{border:0;margin:0;padding:0 8px}
+
+  .pending-row{background:linear-gradient(90deg,rgba(255,251,235,.9),rgba(254,243,199,.5))!important}
+  .dt-row{display:grid;grid-template-columns:1fr 100px 80px;gap:6px;align-items:end}
+  @media (max-width:600px){.dt-row{grid-template-columns:1fr 1fr}}
+
+  /* ═══ PARTNER FORM ═══ */
+  .pt-num-row{display:grid;grid-template-columns:1fr 1fr 40px;gap:6px;margin-bottom:8px;align-items:center}
+  .pt-num-row .del-x{
+    background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:0;border-radius:10px;
+    height:38px;width:38px;cursor:pointer;font-size:15px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;font-family:inherit;
+    box-shadow:0 4px 12px rgba(239,68,68,.35);
+    transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .3s;
+  }
+  .pt-num-row .del-x:hover{transform:scale(1.08) rotate(90deg);
+    box-shadow:0 8px 20px rgba(239,68,68,.55)}
+  .pt-num-row .del-x:active{transform:scale(.92)}
+
+  /* ═══ PARTNER CARDS ═══ */
+  .p-card{
+    background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(248,250,252,.9));
+    backdrop-filter:blur(14px);
+    border:1px solid rgba(226,232,240,.8);
+    border-left:5px solid var(--primary);
+    border-radius:14px;padding:14px;margin-bottom:12px;
+    box-shadow:0 6px 20px rgba(15,23,42,.07),inset 0 1px 0 rgba(255,255,255,.8);
+    transition:transform .4s cubic-bezier(.34,1.56,.64,1),box-shadow .4s,border-left-width .3s;
+    position:relative;overflow:hidden;
+  }
+  .p-card::before{
+    content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(99,102,241,.08),transparent);
+    transition:left .8s;
+  }
+  .p-card:hover::before{left:100%}
+  .p-card:hover{
+    transform:translateY(-4px) translateX(3px);
+    border-left-width:8px;
+    box-shadow:0 18px 40px rgba(99,102,241,.18);
+  }
+  .p-head{display:flex;justify-content:space-between;align-items:flex-start;
+    gap:8px;margin-bottom:8px}
+  .p-name{font-weight:800;font-size:14px;
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .p-sub{font-size:11px;color:var(--muted)}
+  .p-items{
+    background:linear-gradient(135deg,rgba(248,250,252,.9),rgba(241,245,249,.7));
+    border-radius:10px;padding:9px;margin-bottom:8px;
+    border:1px solid rgba(226,232,240,.6);
+  }
+  .p-item{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;
+    border-bottom:1px dashed rgba(226,232,240,.7);transition:background .25s,padding-left .3s}
+  .p-item:last-child{border-bottom:0}
+  .p-item:hover{background:rgba(99,102,241,.05);padding-left:5px;border-radius:6px}
+  .p-item .p-n{font-family:'Courier New',monospace;font-weight:800;color:var(--primary);font-size:14px}
+  .p-item .p-c{font-family:'Courier New',monospace;font-weight:800;color:var(--success)}
+  .p-total{display:flex;justify-content:space-between;font-size:13px;font-weight:800;
+    color:var(--success);padding-top:4px}
+  .p-total .cnt{color:var(--muted);font-weight:600;font-size:11px}
+  .p-actions{display:flex;gap:4px}
+
+  /* ═══ SCROLLBAR ═══ */
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-track{background:rgba(226,232,240,.4);border-radius:6px}
+  ::-webkit-scrollbar-thumb{
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:6px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3);
+  }
+  ::-webkit-scrollbar-thumb:hover{background:linear-gradient(135deg,#4f46e5,#7c3aed)}
+
+  /* ═══ KEYFRAMES ═══ */
+  @keyframes bgShift{
+    0%,100%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+  }
+  @keyframes floatA{
+    0%,100%{transform:translate(0,0) scale(1)}
+    33%{transform:translate(90px,70px) scale(1.12)}
+    66%{transform:translate(-50px,40px) scale(.92)}
+  }
+  @keyframes floatB{
+    0%,100%{transform:translate(0,0) scale(1)}
+    50%{transform:translate(-110px,-90px) scale(1.18)}
+  }
+  @keyframes shine{
+    0%{left:-120%}
+    55%,100%{left:180%}
+  }
+  @keyframes pulseSelect{
+    0%,100%{box-shadow:0 0 0 2px rgba(99,102,241,.35),0 12px 30px rgba(99,102,241,.55)}
+    50%{box-shadow:0 0 0 3px rgba(139,92,246,.5),0 16px 40px rgba(139,92,246,.85)}
+  }
+  @keyframes pulseDanger{
+    0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.35)}
+    50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}
+  }
+  @keyframes pulseBar{
+    0%,100%{left:15%;right:15%}
+    50%{left:8%;right:8%}
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes glowSpin{
+    0%,100%{box-shadow:0 0 6px currentColor}
+    50%{box-shadow:0 0 16px currentColor,0 0 26px currentColor}
+  }
+  @keyframes slideIn{
+    from{transform:translateX(120%);opacity:0}
+    to{transform:translateX(0);opacity:1}
+  }
+  @keyframes toastIn{
+    0%{transform:translateX(130%) rotateY(-25deg);opacity:0}
+    70%{transform:translateX(-6px) rotateY(4deg);opacity:1}
+    100%{transform:translateX(0) rotateY(0);opacity:1}
+  }
+  @keyframes cardEntry{
+    0%{opacity:0;transform:translateY(50px) rotateX(-18deg) scale(.92)}
+    100%{opacity:1;transform:translateY(0) rotateX(0) scale(1)}
+  }
+  @keyframes announceGlow{
+    0%,100%{box-shadow:0 12px 35px rgba(245,158,11,.25),inset 0 1px 0 rgba(255,255,255,.6)}
+    50%{box-shadow:0 20px 55px rgba(245,158,11,.5),inset 0 1px 0 rgba(255,255,255,.6)}
+  }
+  @keyframes glowText{
+    0%,100%{filter:drop-shadow(0 0 6px rgba(245,158,11,.5))}
+    50%{filter:drop-shadow(0 0 18px rgba(245,158,11,.9))}
+  }
+  @keyframes bounce{
+    0%,100%{transform:translateY(0)}
+    50%{transform:translateY(-3px)}
+  }
+  @keyframes floatY{
+    0%,100%{transform:translateY(0)}
+    50%{transform:translateY(-6px)}
+  }
+
+  /* subtle floating for stat cards initially */
+  .stat-card{animation:floatY 6s ease-in-out infinite}
+  .stat-card:nth-child(2){animation-delay:.6s}
+  .stat-card:nth-child(3){animation-delay:1.2s}
+  .stat-card:nth-child(4){animation-delay:1.8s}
+
+  /* 3D tilt helper (JS adds data-tilt) */
+  [data-tilt]{transition:transform .35s cubic-bezier(.22,1.2,.36,1),box-shadow .35s}
+</style>
+</head>
+<body>
+
+<script>
+  const SUPABASE_URL = 'https://rarjdplbpjokaoihuwkk.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_H7_otJnPemCBl3Thq9ZrKg_ZP732LLa';
+  const TZ = 'Asia/Yangon';
+  const SESSION_KEY = 'ln_session_v2';
+</script>
+
+<div id="toast"></div>
+<div id="loader" class="auth-page"><div style="text-align:center;color:#64748b"><span class="loading"></span> Loading...</div></div>
+
+<!-- ═══════ USER AUTH ═══════ -->
+<div id="userAuth" class="auth-page hide">
+  <div class="auth-card" data-tilt>
+    <div id="userClock" class="mb-3" style="text-align:right"></div>
+    <h1 style="font-size:20px">🎯 Lucky Number</h1>
+    <p class="text-sm text-muted mb-3" id="userAuthSub">Login / အကောင့်ဝင်ရန်</p>
+
+    <div class="tabs">
+      <button class="tab active" data-umode="login">Login</button>
+      <button class="tab" data-umode="signup">Signup / Account ဖန်တီး</button>
+      <button class="tab" data-umode="forgot">Passcode မေ့</button>
+    </div>
+
+    <form id="userForm" autocomplete="off">
+      <div id="userNameWrap">
+        <label>အမည် / Full Name <span style="color:var(--danger)">*</span></label>
+        <input class="input" id="u_name" placeholder="အမည် အပြည့်အစုံ" />
+      </div>
+      <label>Viber ဖုန်းနံပါတ် / Phone <span style="color:var(--danger)">*</span></label>
+      <input class="input" id="u_phone" placeholder="09xxxxxxxxx" inputmode="tel" />
+      <div id="userPassWrap">
+        <label>Passcode <span style="color:var(--danger)">*</span></label>
+        <div class="pass-wrap">
+          <input class="input" id="u_pass" type="password" placeholder="••••••" />
+          <button type="button" class="pass-toggle" data-toggle="u_pass">👁️</button>
+        </div>
+      </div>
+      <div id="userPassConfirmWrap" class="hide">
+        <label>Passcode အတည်ပြု / Confirm <span style="color:var(--danger)">*</span></label>
+        <div class="pass-wrap">
+          <input class="input" id="u_pass2" type="password" placeholder="••••••" />
+          <button type="button" class="pass-toggle" data-toggle="u_pass2">👁️</button>
+        </div>
+      </div>
+      <div id="userPassHint" class="info-box hide">Passcode အနည်းဆုံး ၄ လုံး / Min 4 chars</div>
+      <button type="submit" class="btn btn-primary mt-3" style="width:100%;padding:12px" id="userSubmitBtn">
+        <span id="userBtnTxt">ဝင်မည် / Login</span>
+      </button>
+    </form>
+
+    <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border);text-align:center">
+      <a href="#" id="toAdminLogin" class="text-xs text-muted">🛡️ Super Admin Login →</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ ADMIN AUTH ═══════ -->
+<div id="adminAuth" class="auth-page dark hide">
+  <div class="auth-card" data-tilt>
+    <div id="adminClock" class="mb-3" style="text-align:right"></div>
+    <h1 style="font-size:18px">🛡️ Super Admin</h1>
+    <p class="text-sm text-muted mb-3">Viber / Passcode ဖြင့် ဝင်ပါ</p>
+
+    <form id="adminForm" autocomplete="off">
+      <label>အမည် / Name <span style="color:var(--danger)">*</span></label>
+      <input class="input" id="a_name" placeholder="Enter your name" />
+      <label>Viber ဖုန်း / Phone <span style="color:var(--danger)">*</span></label>
+      <input class="input" id="a_phone" placeholder="09xxxxxxxxx" inputmode="tel" />
+      <label>Passcode <span style="color:var(--danger)">*</span></label>
+      <div class="pass-wrap">
+        <input class="input" id="a_pass" type="password" placeholder="••••••" />
+        <button type="button" class="pass-toggle" data-toggle="a_pass">👁️</button>
+      </div>
+      <button type="submit" class="btn btn-success mt-3" style="width:100%;padding:12px" id="adminSubmitBtn">
+        <span id="adminBtnTxt">Admin Login</span>
+      </button>
+    </form>
+
+    <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border);text-align:center">
+      <a href="#" id="toUserLogin" class="text-xs text-muted">← User Login</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ USER DASHBOARD ═══════ -->
+<div id="dashboard" class="hide">
+  <header class="app-header">
+    <div class="container">
+      <div>
+        <div class="b" id="dashName">-</div>
+        <div class="text-xs" style="opacity:.6" id="dashPhone">-</div>
+      </div>
+      <div class="clock" id="dashClock"></div>
+      <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.08)"
+        onclick="confirmLogout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div id="announceBox"></div>
+
+    <div class="grid-3 mb-3">
+      <div class="coin-card" data-tilt>
+        <div class="lbl">Coin Balance / လက်ကျန်</div>
+        <div class="val" id="myCoin">0</div>
+      </div>
+      <div class="card" style="margin:0" data-tilt>
+        <div class="text-xs text-muted">Bonus</div>
+        <div style="font-size:24px;font-weight:800;color:var(--success)" id="bonusPct">+10%</div>
+        <div class="text-xs text-muted">Bonus ပေါင်းပြီး</div>
+      </div>
+      <div class="card" style="margin:0" id="salesStatus" data-tilt>
+        <div class="text-xs text-muted">Sales / အရောင်း</div>
+        <div style="font-size:16px;font-weight:700" id="salesStatusText">🟢 Open</div>
+        <div class="text-xs text-muted" id="salesCloseInfo"></div>
+      </div>
+    </div>
+
+    <div class="tabs" style="background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border:1px solid var(--border);border-radius:14px;padding:4px;margin-bottom:16px;box-shadow:0 6px 20px rgba(15,23,42,.06)">
+      <button class="tab active" data-dtab="buy">🛒 Buy</button>
+      <button class="tab" data-dtab="history">📋 My Purchases</button>
+      <button class="tab" data-dtab="partners">👥 Partners / မှတ်စု</button>
+    </div>
+
+    <div id="dtab-buy">
+      <div class="grid-2">
+        <div class="card">
+          <div class="row between mb-2">
+            <h3 style="margin:0">🔢 Numbers / နံပါတ်</h3>
+            <span class="text-xs text-muted" id="padCount">1000</span>
+          </div>
+          <input class="input mb-2" id="numSearch" placeholder="Search 000-999" maxlength="3" inputmode="numeric" />
+          <div class="pad-grid" id="numberPad"></div>
+        </div>
+
+        <div class="card">
+          <h3>🛒 Buy / ဝယ်ယူ</h3>
+          <div style="text-align:center;background:linear-gradient(135deg,#f1f5f9,#eef2ff);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:inset 0 2px 10px rgba(99,102,241,.08)">
+            <div class="text-xs text-muted">ရွေးထားသော နံပါတ်များ</div>
+            <div class="mono" style="font-size:25px;font-weight:800;color:#6366f1;overflow-wrap:anywhere" id="selectedNum">မရွေးရသေးပါ</div>
+            <div class="text-xs text-muted" id="selectedCount">0 နံပါတ်</div>
+          </div>
+          <label>တူညီသော ဈေးနှုန်း (ရွေးထားသမျှသို့ ထည့်ရန်)</label>
+          <div class="row" style="gap:6px"><input class="input" id="buyAmount" placeholder="ဥပမာ 5000" inputmode="numeric" style="font-size:17px;font-weight:600;flex:1" /><button class="btn btn-ghost" type="button" id="applySharedAmount">အားလုံးသတ်မှတ်</button></div>
+          <div class="text-xs text-muted mt-2">နံပါတ်တစ်ခုချင်းစီ ဈေးနှုန်းမတူပါက အောက်ပါစာရင်းတွင် ပြင်နိုင်သည်။</div>
+          <div id="selectedNumbersList" class="mt-2"></div>
+          <div class="grid-2 mt-3"><div><label>ကိုယ်စားဝယ်သူအမည် (ရွေးချယ်နိုင်)</label><input class="input" id="buyerRepName" maxlength="100" placeholder="အမည်" /></div><div><label>ကိုယ်စားဝယ်သူဖုန်း</label><input class="input" id="buyerRepPhone" maxlength="30" inputmode="tel" placeholder="ဖုန်းနံပါတ်" /></div></div>
+          <div class="pill-group mt-2">
+            <span class="pill" data-amt="1000">1,000</span>
+            <span class="pill" data-amt="2000">2,000</span>
+            <span class="pill" data-amt="5000">5,000</span>
+            <span class="pill" data-amt="10000">10,000</span>
+            <span class="pill" data-amt="20000">20,000</span>
+          </div>
+          <div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-radius:14px;padding:12px;margin-top:12px;font-size:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.7);border:1px solid rgba(167,243,208,.7)">
+            <div class="row between"><span>Cost / ကုန်ကျ</span><b id="prevAmt">0</b></div>
+            <div class="row between" style="color:var(--success)">
+              <span>Bonus (<span id="prevPct">10</span>%)</span><b id="prevBonus">+0</b>
+            </div>
+            <div class="row between" style="border-top:1px solid #a7f3d0;padding-top:6px;margin-top:6px;font-size:14px">
+              <span>Total / စုစုပေါင်း</span><b style="color:var(--success)" id="prevTotal">0</b>
+            </div>
+          </div>
+          <div class="warn-box" id="approvalNotice">⏳ Admin Approval လိုအပ်</div>
+          <button class="btn btn-primary mt-3" style="width:100%;padding:14px" id="buyBtn"
+            onclick="doBuy()">ဝယ်ယူမည် / Buy</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="dtab-history" class="hide">
+      <div class="card">
+        <div class="row between mb-2" style="flex-wrap:wrap">
+          <h3 style="margin:0">📋 My Purchases / ဝယ်ယူစာရင်း</h3>
+          <input class="input" id="myPurSearch" placeholder="🔍 နံပါတ်" style="max-width:120px" maxlength="3" inputmode="numeric" />
+        </div>
+        <div class="grid-2 mb-2">
+          <div><label>ပြီးဆုံးမှတ်တမ်း စတင်ရက် / From</label><input class="input" id="myHistFrom" type="date" /></div>
+          <div><label>ပြီးဆုံးမှတ်တမ်း နောက်ဆုံးရက် / To</label><input class="input" id="myHistTo" type="date" /></div>
+        </div>
+        <div class="row mb-3" style="flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" id="myHistSearch">ရက်အလိုက် မှတ်တမ်းကြည့်မည်</button>
+          <button class="btn btn-ghost btn-sm" id="myHistCurrent">လက်ရှိကာလစာရင်း</button>
+          <span class="text-xs text-muted" id="myHistLabel">လက်ရှိကာလစာရင်း</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="myPurchasesTable">
+            <thead><tr>
+              <th>Number</th><th>Coin</th><th>Total</th>
+              <th>Purchased</th><th>Status</th><th>Edit</th><th></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ PARTNERS — MULTI-NUMBER SYSTEM ═══════ -->
+    <div id="dtab-partners" class="hide">
+      <div class="grid-2">
+        <div class="card">
+          <h3>👥 Add Partner / မှတ်တမ်းထည့်</h3>
+          <p class="text-xs text-muted mb-2">Partner အချက်အလက် → ဝယ်ယူနံပါတ်များ → Coin များ</p>
+
+          <label>Partner Name / အမည် <span style="color:var(--danger)">*</span></label>
+          <input class="input" id="pt_name" placeholder="Partner အမည်" />
+
+          <label>Phone / ဖုန်းနံပါတ်</label>
+          <input class="input" id="pt_phone" placeholder="09xxxxxxxxx" inputmode="tel" />
+
+          <label>Note / မှတ်စု</label>
+          <input class="input" id="pt_note" placeholder="ဖြည့်စွက်ချက်" />
+
+          <div style="margin:14px 0 8px;padding-top:12px;border-top:1px dashed var(--border)">
+            <div class="row between mb-2">
+              <label style="margin:0;font-size:12px;color:var(--text)">
+                🔢 ဝယ်ယူနံပါတ်များ / Numbers
+              </label>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="addNumberRow()">
+                ➕ ထပ်ထည့်
+              </button>
+            </div>
+            <div id="ptNumbers"></div>
+          </div>
+
+          <div class="info-box" style="font-size:13px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);color:#065f46;border-color:#a7f3d0">
+            Total: <b id="ptTotalCoins" class="mono">0</b> Coin · <b id="ptTotalCount">0</b> numbers
+          </div>
+
+          <div class="row mt-3">
+            <button class="btn btn-primary" style="flex:1;padding:12px" id="ptSaveBtn" onclick="savePartner()">
+              💾 Save
+            </button>
+            <button class="btn btn-ghost" style="padding:12px" onclick="resetPartnerForm()">Cancel</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row between mb-2">
+            <h3 style="margin:0">📇 Partner Records</h3>
+            <span class="text-xs text-muted" id="ptCount"></span>
+          </div>
+          <input class="input mb-2" id="ptSearch" placeholder="🔍 Name / Phone / Number" />
+          <div id="partnersList" style="max-height:640px;overflow:auto;padding-right:4px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ ADMIN PANEL ═══════ -->
+<div id="adminPanel" class="hide">
+  <header class="app-header">
+    <div class="container">
+      <div>
+        <div class="b">🛡️ Super Admin</div>
+        <div class="text-xs" style="opacity:.6" id="adminInfo">-</div>
+      </div>
+      <div class="clock" id="adminClock2"></div>
+      <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.08)"
+        onclick="confirmLogout()">Logout</button>
+    </div>
+  </header>
+
+  <nav class="admin-nav">
+    <div class="tabs" id="adminTabs">
+      <button class="tab active" data-atab="overview">📊 Overview</button>
+      <button class="tab" data-atab="pending">⏳ Pending</button>
+      <button class="tab" data-atab="users">👥 Users</button>
+      <button class="tab" data-atab="purchases">🧾 Purchases</button>
+      <button class="tab" data-atab="periods">🗂️ Period Archive</button>
+      <button class="tab" data-atab="partners">📇 Partners</button>
+      <button class="tab" data-atab="summary">📈 Summary</button>
+      <button class="tab" data-atab="rules">🔢 Numbers</button>
+      <button class="tab" data-atab="sales">⏰ Sales</button>
+      <button class="tab" data-atab="draw">🎉 Draw</button>
+      <button class="tab" data-atab="reset">🔑 Passcode</button>
+    </div>
+  </nav>
+
+  <div class="container" id="adminContent" style="padding-top:16px"></div>
+</div>
+
+<script>
+/* ═══════ INIT ═══════ */
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const norm = (p) => (p || '').replace(/\D/g, '');
+const fmt = (n) => new Intl.NumberFormat('en-US').format(Number(n || 0));
+const fmtDT = (d) => {
+  if (!d) return '-';
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: TZ, day:'2-digit', month:'short', year:'numeric',
+    hour:'2-digit', minute:'2-digit', hour12:true
+  }).format(new Date(d));
+};
+const monthKey = () => new Intl.DateTimeFormat('en-CA', {
+  timeZone: TZ, year:'numeric', month:'2-digit'
+}).format(new Date()).slice(0,7);
+
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  $('toast').appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+function show(id) {
+  ['loader','userAuth','adminAuth','dashboard','adminPanel'].forEach(x => $(x).classList.add('hide'));
+  $(id).classList.remove('hide');
+  init3DTilt();
+}
+function btnLoading(btn, txtEl, loading, text) {
+  btn.disabled = loading;
+  if (txtEl) txtEl.innerHTML = loading ? '<span class="loading"></span>' : text;
+}
+
+/* ── 5D tilt effect for cards ── */
+function init3DTilt() {
+  document.querySelectorAll('[data-tilt]').forEach(el => {
+    if (el.dataset.tiltBound) return;
+    el.dataset.tiltBound = '1';
+    let raf = null;
+    el.addEventListener('mousemove', (e) => {
+      const rect = el.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        el.style.transform =
+          `perspective(1100px) rotateY(${x * 7}deg) rotateX(${-y * 7}deg) translateZ(12px) scale(1.015)`;
+      });
+    });
+    el.addEventListener('mouseleave', () => {
+      if (raf) cancelAnimationFrame(raf);
+      el.style.transform = '';
+    });
+  });
+}
+
+/* LIVE CLOCK */
+function tickClocks() {
+  const now = new Date();
+  const t = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true }).format(now);
+  const d = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, weekday:'short', day:'2-digit', month:'short', year:'numeric' }).format(now);
+  const big = `<div class="t">${t}</div><div class="d">${d} · MMT</div>`;
+  ['userClock','adminClock'].forEach(id => { const e = $(id); if (e) e.innerHTML = big; });
+  const small = `<div class="t">${t}</div><div class="d">${d}</div>`;
+  ['dashClock','adminClock2'].forEach(id => { const e = $(id); if (e) e.innerHTML = small; });
+}
+setInterval(tickClocks, 1000); tickClocks();
+
+document.querySelectorAll('.pass-toggle').forEach(b => {
+  b.onclick = () => {
+    const inp = $(b.dataset.toggle); if (!inp) return;
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+    b.textContent = inp.type === 'password' ? '👁️' : '🙈';
+  };
+});
+
+/* SESSION */
+let currentUser = null, liveChannels = [];
+const saveSession = (u) => localStorage.setItem(SESSION_KEY, JSON.stringify(u));
+const loadSession = () => { try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { return null; } };
+const clearSession = () => localStorage.removeItem(SESSION_KEY);
+
+async function refreshUser() {
+  if (!currentUser) return null;
+  const { data, error } = await sb.rpc('get_user', { p_uid: currentUser.id });
+  if (error || !data) { clearSession(); currentUser = null; return null; }
+  currentUser = data; saveSession(data); return data;
+}
+async function confirmLogout() {
+  if (!confirm('Logout?')) return;
+  clearSession(); currentUser = null;
+  liveChannels.forEach(c => { try { sb.removeChannel(c); } catch(e){} });
+  liveChannels = [];
+  if (dashState.tickTimer) clearInterval(dashState.tickTimer);
+  location.hash = '';
+  show('userAuth');
+}
+
+/* USER AUTH UI */
+let userMode = 'login';
+document.querySelectorAll('[data-umode]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-umode]').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  userMode = b.dataset.umode;
+  $('userNameWrap').classList.toggle('hide', false);
+  $('userPassWrap').classList.toggle('hide', userMode === 'forgot');
+  $('userPassConfirmWrap').classList.toggle('hide', userMode !== 'signup');
+  $('userPassHint').classList.toggle('hide', userMode !== 'signup');
+  $('userAuthSub').textContent =
+    userMode === 'login'  ? 'Login / အကောင့်ဝင်ရန်' :
+    userMode === 'signup' ? 'Signup / Account ဖန်တီးရန်' : 'Forgot Passcode';
+  $('userBtnTxt').textContent =
+    userMode === 'login'  ? 'ဝင်မည် / Login' :
+    userMode === 'signup' ? 'ဖန်တီးမည် / Signup' : 'တောင်းဆိုမည်';
+});
+$('toAdminLogin').onclick = (e) => { e.preventDefault(); location.hash = '#admin'; show('adminAuth'); };
+$('toUserLogin').onclick  = (e) => { e.preventDefault(); location.hash = ''; show('userAuth'); };
+
+/* ═══════ SIGNUP / LOGIN / FORGOT ═══════ */
+$('userForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const name = $('u_name').value.trim();
+  const phone = $('u_phone').value.trim();
+  const pass = $('u_pass').value;
+  const pass2 = $('u_pass2') ? $('u_pass2').value : '';
+  const btn = $('userSubmitBtn'), txt = $('userBtnTxt');
+  const orig = txt.textContent;
+
+  try {
+    const p = norm(phone);
+    if (p.length < 7) throw new Error('ဖုန်းနံပါတ် မှန်ကန်စွာ ထည့်ပါ');
+    if (!name) throw new Error('အမည် ထည့်ပါ');
+
+    if (userMode === 'signup') {
+      if (pass.length < 4) throw new Error('Passcode အနည်းဆုံး ၄ လုံး');
+      if (pass !== pass2) throw new Error('Passcode ၂ ခု မတူညီပါ');
+      btnLoading(btn, txt, true, '');
+      const { data, error } = await sb.rpc('signup_user', {
+        p_name: name, p_phone: p, p_pass: pass
+      });
+      if (error) throw error;
+      if (data?.error === 'PHONE_EXISTS') throw new Error('ဤဖုန်းနံပါတ်ဖြင့် Account ရှိပြီးသား');
+      if (data?.error === 'PASS_TOO_SHORT') throw new Error('Passcode အနည်းဆုံး ၄ လုံး');
+      if (data?.error) throw new Error(data.error);
+      currentUser = data.user; saveSession(currentUser);
+      toast('✅ Account ဖန်တီးပြီး!', 'ok');
+      startDashboard();
+      return;
+    }
+
+    if (userMode === 'forgot') {
+      btnLoading(btn, txt, true, '');
+      const { data, error } = await sb.rpc('request_reset', { p_phone: p, p_name: name || null });
+      if (error) throw error;
+      if (data?.error === 'PHONE_NOT_FOUND') throw new Error('ဖုန်းနံပါတ် မတွေ့ပါ');
+      toast('တောင်းဆိုမှု ပို့ပြီး / Request sent', 'ok');
+      return;
+    }
+
+    btnLoading(btn, txt, true, '');
+    const { data, error } = await sb.rpc('login_user', { p_phone: p, p_pass: pass });
+    if (error) throw error;
+    if (data?.error === 'INVALID_CREDS') throw new Error('ဖုန်းနံပါတ် သို့ Passcode မှားနေသည်');
+    if (data?.error?.startsWith('ACCOUNT_')) throw new Error('Account ရပ်ဆိုင်း/Ban ထားသည်');
+    if (data?.error) throw new Error(data.error);
+    if (data.user.role === 'super_admin') throw new Error('Super Admin အတွက် Admin Login ကို အသုံးပြုပါ');
+    if (data.user.full_name.trim().toLowerCase() !== name.toLowerCase())
+      throw new Error('အမည် မကိုက်ညီပါ');
+    currentUser = data.user; saveSession(currentUser);
+    toast('ကြိုဆိုပါတယ်!', 'ok');
+    startDashboard();
+  } catch (err) {
+    toast(err.message || 'Error', 'err');
+  } finally { btnLoading(btn, txt, false, orig); }
+};
+
+/* ═══════ ADMIN FORM ═══════ */
+$('adminForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const name = $('a_name').value.trim();
+  const phone = $('a_phone').value.trim();
+  const pass = $('a_pass').value;
+  const btn = $('adminSubmitBtn'), txt = $('adminBtnTxt');
+  const orig = txt.textContent;
+
+  try {
+    if (!name) throw new Error('အမည် ထည့်ပါ');
+    if (!phone) throw new Error('ဖုန်းနံပါတ် ထည့်ပါ');
+    if (!pass) throw new Error('Passcode ထည့်ပါ');
+
+    btnLoading(btn, txt, true, '');
+
+    const { data, error } = await sb.rpc('login_user', {
+      p_phone: norm(phone), p_pass: pass
+    });
+    if (error) throw error;
+
+    if (data?.error === 'INVALID_CREDS') throw new Error('အချက်အလက် မှားနေသည်');
+    if (data?.error?.startsWith('ACCOUNT_')) throw new Error('Account ရပ်ဆိုင်း/Ban ထားသည်');
+    if (data?.error) throw new Error(data.error);
+    if (data.user.role !== 'super_admin') throw new Error('Super Admin မဟုတ်ပါ');
+    if (data.user.full_name.trim().toLowerCase() !== name.toLowerCase())
+      throw new Error('အမည် မကိုက်ညီပါ / Name mismatch');
+
+    currentUser = data.user;
+    saveSession(currentUser);
+    toast('Admin Login ✅', 'ok');
+    startAdmin();
+  } catch (err) {
+    toast(err.message, 'err');
+  } finally {
+    btnLoading(btn, txt, false, orig);
+  }
+};
+
+/* ═══════ USER DASHBOARD ═══════ */
+let dashState = {
+  settings:null, rules:{}, totals:{}, mine:[], partners:[],
+  sel:null, selectedNumbers:{}, tickTimer:null, myFilter:'', ptSearch:'',
+  editingGroupId:null, historyFrom:null, historyTo:null, historyMode:'current'
+};
+
+document.querySelectorAll('[data-dtab]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-dtab]').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  const t = b.dataset.dtab;
+  ['buy','history','partners'].forEach(x => $('dtab-' + x).classList.toggle('hide', x !== t));
+});
+
+async function startDashboard() {
+  show('dashboard');
+  $('dashName').textContent = currentUser.full_name;
+  $('dashPhone').textContent = currentUser.viber_phone;
+
+  await loadUserData();
+  await loadAnnouncement();
+  await loadPartners();
+
+  liveChannels.forEach(c => { try { sb.removeChannel(c); } catch(e){} });
+  liveChannels = [];
+  const ch = sb.channel('user-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'purchases' }, loadUserData)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'number_rules' }, loadUserData)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, loadUserData)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'partners',
+        filter: `user_id=eq.${currentUser.id}` }, loadPartners)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'draws' }, loadAnnouncement)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'draw_winners' }, loadAnnouncement)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users',
+        filter: `id=eq.${currentUser.id}` },
+        async () => { await refreshUser(); updateCoinDisplay(); })
+    .subscribe();
+  liveChannels.push(ch);
+
+  if (dashState.tickTimer) clearInterval(dashState.tickTimer);
+  dashState.tickTimer = setInterval(updateCountdowns, 1000);
+
+  $('buyAmount').oninput = updatePreview;
+  $('applySharedAmount').onclick = () => { const v=Number($('buyAmount').value); if(!v||v<=0)return toast('ဈေးနှုန်းထည့်ပါ','err'); Object.keys(dashState.selectedNumbers).forEach(n=>dashState.selectedNumbers[n]=v); renderSelectedNumbers(); updatePreview(); }; 
+  document.querySelectorAll('.pill[data-amt]').forEach(p => p.onclick = () => {
+    $('buyAmount').value = p.dataset.amt; updatePreview();
+  });
+  $('numSearch').oninput = (e) => {
+    e.target.value = e.target.value.replace(/\D/g,'').slice(0,3);
+    renderPad();
+  };
+  $('myPurSearch').oninput = (e) => {
+    e.target.value = e.target.value.replace(/\D/g,'').slice(0,3);
+    dashState.myFilter = e.target.value; renderMyPurchases();
+  };
+  $('myHistSearch').onclick = () => {
+    const from = $('myHistFrom').value, to = $('myHistTo').value;
+    if (!from || !to || from > to) return toast('စတင်ရက်နှင့် နောက်ဆုံးရက် မှန်ကန်စွာရွေးပါ','err');
+    dashState.historyFrom = from; dashState.historyTo = to; dashState.historyMode = 'range'; renderMyPurchases();
+  };
+  $('myHistCurrent').onclick = () => { dashState.historyFrom=null; dashState.historyTo=null; dashState.historyMode='current'; renderMyPurchases(); };
+  $('ptSearch').oninput = e => { dashState.ptSearch = e.target.value; renderPartners(); };
+
+  if (!$('ptNumbers').children.length) resetPartnerForm();
+}
+
+function updateCoinDisplay() {
+  if (!currentUser) return;
+  $('myCoin').textContent = fmt(currentUser.coin_balance);
+}
+
+async function loadUserData() {
+  if (!currentUser) return;
+  const month = monthKey();
+  const [r1, r3, r4] = await Promise.all([
+    sb.from('number_rules').select('number,is_closed,max_amount,auto_closed'),
+    sb.from('purchases').select('*').eq('user_id', currentUser.id).order('purchased_at', { ascending: false }),
+    sb.from('settings').select('*').eq('id', 1).single()
+  ]);
+  // Number totals are scoped to the Super Admin's current sales period, not a permanent/monthly total.
+  let totalsQuery = sb.from('purchases').select('number,total,status').in('status', ['pending','approved']);
+  if (r4.data?.sales_open_at) totalsQuery = totalsQuery.gte('purchased_at', r4.data.sales_open_at);
+  else totalsQuery = totalsQuery.eq('month_key', month);
+  if (r4.data?.sales_close_at) totalsQuery = totalsQuery.lte('purchased_at', r4.data.sales_close_at);
+  const r2 = await totalsQuery;
+  dashState.rules = {};
+  (r1.data || []).forEach(r => dashState.rules[r.number] = r);
+  dashState.totals = {};
+  (r2.data || []).forEach(p => dashState.totals[p.number] = (dashState.totals[p.number]||0) + Number(p.total));
+  dashState.mine = r3.data || [];
+  dashState.settings = r4.data;
+
+  $('bonusPct').textContent = '+' + (dashState.settings?.bonus_percent ?? 10) + '%';
+  $('prevPct').textContent = dashState.settings?.bonus_percent ?? 10;
+  const req = dashState.settings?.require_approval;
+  $('approvalNotice').innerHTML = req
+    ? '⏳ Admin Approval လိုအပ် / Requires Approval' : '✅ Auto-approved instantly';
+  $('approvalNotice').style.background = req
+    ? 'linear-gradient(135deg,#fef3c7,#fde68a)' : 'linear-gradient(135deg,#d1fae5,#a7f3d0)';
+  $('approvalNotice').style.color = req ? '#78350f' : '#065f46';
+
+  updateCoinDisplay(); renderPad(); renderMyPurchases();
+  updateSalesStatus(); updatePreview();
+}
+
+function updateSalesStatus() {
+  const s = dashState.settings; if (!s) return;
+  const now = new Date();
+  let open = !s.sales_closed;
+  if (s.sales_open_at && now < new Date(s.sales_open_at)) open = false;
+  if (s.sales_close_at && now >= new Date(s.sales_close_at)) open = false;
+  $('salesStatusText').textContent = open ? '🟢 Open' : '🔒 Closed';
+  $('salesStatus').style.background = open
+    ? 'linear-gradient(135deg,rgba(236,253,245,.9),rgba(209,250,229,.7))'
+    : 'linear-gradient(135deg,rgba(254,242,242,.9),rgba(254,226,226,.7))';
+  let info = '';
+  if (s.sales_open_at) info += `Open: ${fmtDT(s.sales_open_at)}<br>`;
+  if (s.sales_close_at) info += `Close: ${fmtDT(s.sales_close_at)}`;
+  $('salesCloseInfo').innerHTML = info;
+  $('buyBtn').disabled = !open;
+  $('buyBtn').textContent = open ? 'ဝယ်ယူမည် / Buy' : '🔒 Closed';
+}
+function isSalesClosed() {
+  const s = dashState.settings; if (!s) return false;
+  const now = new Date();
+  if (s.sales_closed) return true;
+  if (s.sales_open_at && now < new Date(s.sales_open_at)) return true;
+  if (s.sales_close_at && now >= new Date(s.sales_close_at)) return true;
+  return false;
+}
+
+function renderPad() {
+  const q = $('numSearch').value.trim();
+  const pad = $('numberPad'); pad.innerHTML = '';
+  const closed = isSalesClosed(); let count = 0;
+  for (let i = 0; i < 1000; i++) {
+    const n = String(i).padStart(3, '0');
+    if (q && !n.includes(q)) continue;
+    count++;
+    const rule = dashState.rules[n];
+    const total = dashState.totals[n] || 0;
+    const isClosed = rule?.is_closed;
+    const isAuto = rule?.auto_closed;
+    const isFull = rule?.max_amount != null && total >= Number(rule.max_amount);
+    const disabled = closed || isClosed || isFull;
+    const selected = Object.prototype.hasOwnProperty.call(dashState.selectedNumbers, n);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    let cls = 'num-btn';
+    if (selected) cls += ' selected';
+    if (isAuto) cls += ' auto-closed';
+    btn.className = cls; btn.disabled = disabled; btn.textContent = n;
+    let title = '';
+    if (isAuto) title = `Auto-closed`;
+    else if (isClosed) title = 'Manually closed';
+    else if (isFull) title = `Limit reached`;
+    else title = `Total: ${fmt(total)}`;
+    btn.title = title;
+    if (total > 0) {
+      const d = document.createElement('span');
+      d.className = 'dot';
+      d.textContent = total >= 1000 ? (total/1000).toFixed(1)+'k' : total;
+      btn.appendChild(d);
+    }
+    btn.onclick = () => { if (Object.prototype.hasOwnProperty.call(dashState.selectedNumbers,n)) delete dashState.selectedNumbers[n]; else dashState.selectedNumbers[n] = Number($('buyAmount').value)||0; dashState.sel=n; renderPad(); renderSelectedNumbers(); updatePreview(); };
+    pad.appendChild(btn);
+  }
+  $('padCount').textContent = count + ' numbers';
+  if (!pad.children.length) pad.innerHTML = '<div class="empty" style="grid-column:1/-1">မတွေ့ပါ</div>';
+}
+function renderSelectedNumbers() {
+  const nums = Object.keys(dashState.selectedNumbers).sort((a,b)=>Number(a)-Number(b));
+  $('selectedNum').textContent = nums.length ? nums.join(', ') : 'မရွေးရသေးပါ';
+  $('selectedCount').textContent = `${nums.length} နံပါတ်`;
+  const host=$('selectedNumbersList'); if(!host)return;
+  if(!nums.length){host.innerHTML='<div class="empty">နံပါတ်များကို အပေါ်မှ ရွေးပါ</div>';return;}
+  host.innerHTML=`<div style="max-height:190px;overflow:auto;display:grid;gap:6px">${nums.map(n=>`<div class="row between" style="gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:9px"><b class="mono">${n}</b><input class="input mono" data-num-amount="${n}" value="${dashState.selectedNumbers[n]||''}" placeholder="ဈေးနှုန်း" inputmode="numeric" style="width:125px;padding:7px;text-align:right"/><button class="btn btn-ghost btn-sm" data-remove-num="${n}">ဖယ်</button></div>`).join('')}</div>`;
+  host.querySelectorAll('[data-num-amount]').forEach(inp=>inp.oninput=()=>{dashState.selectedNumbers[inp.dataset.numAmount]=Number(inp.value)||0;updatePreview();});
+  host.querySelectorAll('[data-remove-num]').forEach(btn=>btn.onclick=()=>{delete dashState.selectedNumbers[btn.dataset.removeNum];renderPad();renderSelectedNumbers();updatePreview();});
+}
+function updatePreview() {
+  const nums=Object.keys(dashState.selectedNumbers||{});
+  const shared=Number($('buyAmount')?.value||0);
+  const a=nums.length?nums.reduce((sum,n)=>sum+(Number(dashState.selectedNumbers[n])||0),0):shared;
+  const pct = dashState.settings?.bonus_percent ?? 10;
+  const total = Math.round(a * (1 + pct/100));
+  $('prevAmt').textContent = fmt(a);
+  $('prevBonus').textContent = '+' + fmt(total - a);
+  $('prevTotal').textContent = fmt(total);
+}
+async function doBuy() {
+  const access = await sb.rpc('check_purchase_access', { p_uid: currentUser.id });
+  if (access.error) return toast('ဝယ်ယူခွင့်စစ်ဆေးမှု မအောင်မြင်ပါ။ SQL migration ကို အရင်လုပ်ပါ။', 'err');
+  if (!access.data || access.data.allowed !== true) return toast(access.data?.reason === 'EXPIRED' ? 'ဝယ်ယူခွင့်ကာလ ပြီးဆုံးသွားပါပြီ။ Super Admin ကို ဆက်သွယ်ပါ။' : 'အကောင့်အသုံးပြုခွင့် မရှိပါ', 'err');
+  if (isSalesClosed()) return toast('Super Admin သတ်မှတ်ထားသော အရောင်းကာလ မဖွင့်သေးပါ သို့မဟုတ် ပြီးဆုံးသွားပါပြီ။','err');
+  const items=Object.entries(dashState.selectedNumbers||{}).map(([number,amount])=>({number,amount:Number(amount)}));
+  if (!items.length) return toast('နံပါတ်တစ်ခု သို့မဟုတ် အများအပြား ရွေးပါ','err');
+  if (items.some(x=>!Number.isInteger(x.amount)||x.amount<=0)) return toast('ရွေးထားသော နံပါတ်တိုင်းအတွက် ဈေးနှုန်းထည့်ပါ','err');
+  const repName=$('buyerRepName').value.trim(), repPhone=$('buyerRepPhone').value.trim();
+  if ((repName && !repPhone) || (!repName && repPhone)) return toast('ကိုယ်စားဝယ်သူ အမည်နှင့် ဖုန်းနံပါတ် နှစ်ခုလုံးထည့်ပါ (သို့) နှစ်ခုလုံးဗလာထားပါ','err');
+  $('buyBtn').disabled=true; $('buyBtn').textContent='လုပ်ဆောင်နေသည်…';
+  const {data,error}=await sb.rpc('place_purchase_multi',{p_uid:currentUser.id,p_items:items,p_buyer_name:repName||null,p_buyer_phone:repPhone||null});
+  $('buyBtn').disabled=false; $('buyBtn').textContent='ဝယ်ယူမည် / Buy';
+  if(error) return toast('ဝယ်ယူမှုမအောင်မြင်ပါ။ SQL migration နှင့် table columns ကိုစစ်ပါ။ '+error.message,'err');
+  if(data?.error) return toast(data.error,'err');
+  toast(`✅ ${items.length} နံပါတ် ဝယ်ယူမှု ပို့ပြီးပါပြီ`,'ok');
+  dashState.sel=null; dashState.selectedNumbers={}; $('buyAmount').value=''; $('buyerRepName').value=''; $('buyerRepPhone').value='';
+  renderPad();renderSelectedNumbers();updatePreview();await loadUserData();
+}
+
+function statusBadge(s) {
+  const map = {
+    pending:  ['badge-yellow', 'Pending'],
+    approved: ['badge-green',  'Approved'],
+    rejected: ['badge-red',    'Rejected'],
+  };
+  const [c, t] = map[s] || ['badge-gray', s];
+  return `<span class="badge ${c}">${t}</span>`;
+}
+function renderMyPurchases() {
+  const tb = document.querySelector('#myPurchasesTable tbody');
+  tb.innerHTML = '';
+  const f = dashState.myFilter;
+  const settings = dashState.settings || {};
+  let list = dashState.mine.filter(p => {
+    const at = new Date(p.purchased_at).getTime();
+    if (dashState.historyMode === 'range') {
+      const from = new Date(dashState.historyFrom + 'T00:00:00+06:30').getTime();
+      const to = new Date(dashState.historyTo + 'T23:59:59+06:30').getTime();
+      return at >= from && at <= to;
+    }
+    if (settings.sales_open_at && at < new Date(settings.sales_open_at).getTime()) return false;
+    if (settings.sales_close_at && at > new Date(settings.sales_close_at).getTime()) return false;
+    return true;
+  });
+  if (f) list = list.filter(p => String(p.number).includes(f));
+  const label = $('myHistLabel');
+  if (label) label.textContent = dashState.historyMode === 'range'
+    ? `ပြီးဆုံးမှတ်တမ်း: ${dashState.historyFrom} → ${dashState.historyTo}`
+    : `လက်ရှိကာလ: ${settings.sales_open_at ? fmtDT(settings.sales_open_at) : 'စတင်ချိန်မသတ်မှတ်'} → ${settings.sales_close_at ? fmtDT(settings.sales_close_at) : 'ကုန်ဆုံးချိန်မသတ်မှတ်'}`;
+  if (!list.length) {
+    tb.innerHTML = `<tr><td colspan="7" class="empty">${f ? 'No match' : 'ဤကာလအတွင်း ဝယ်ယူမှတ်တမ်းမရှိပါ'}</td></tr>`;
+    return;
+  }
+  list.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.dataset.editableUntil = p.editable_until;
+    tr.dataset.status = p.status;
+    tr.innerHTML = `
+      <td class="mono b">${esc(p.number)}</td>
+      <td>${fmt(p.amount)}</td>
+      <td class="b text-green">${fmt(p.total)}</td>
+      <td class="text-xs text-muted">${fmtDT(p.purchased_at)}</td>
+      <td>${statusBadge(p.status)}</td>
+      <td class="text-xs" data-countdown>-</td>
+      <td>${p.status === 'pending' ? '<button class="btn btn-ghost btn-sm" data-edit>Edit</button>' : ''}</td>`;
+    const eb = tr.querySelector('[data-edit]');
+    if (eb) eb.onclick = () => editPurchase(p);
+    tb.appendChild(tr);
+  });
+  updateCountdowns();
+}
+function updateCountdowns() {
+  const closed = isSalesClosed();
+  document.querySelectorAll('#myPurchasesTable tbody tr').forEach(tr => {
+    if (tr.dataset.status !== 'pending') {
+      const c = tr.querySelector('[data-countdown]');
+      if (c) c.innerHTML = '<span class="text-xs text-muted">—</span>';
+      return;
+    }
+    const until = new Date(tr.dataset.editableUntil).getTime();
+    const left = until - Date.now();
+    const cell = tr.querySelector('[data-countdown]');
+    const btn = tr.querySelector('[data-edit]');
+    if (!cell) return;
+    if (left > 0 && !closed) {
+      const h = Math.floor(left/3600000);
+      const m = Math.floor((left%3600000)/60000);
+      const s = Math.floor((left%60000)/1000);
+      cell.innerHTML = `<span class="text-green mono">${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}</span>`;
+      if (btn) btn.disabled = false;
+    } else {
+      cell.innerHTML = '<span class="text-red">Expired</span>';
+      if (btn) btn.disabled = true;
+    }
+  });
+}
+async function editPurchase(p) {
+  const n = prompt('New number (000-999)', p.number);
+  if (!n) return;
+  if (!/^\d{1,3}$/.test(n.trim())) return toast('3 digits', 'err');
+  const a = prompt('New amount', String(p.amount));
+  if (!a) return;
+  const amt = Number(a);
+  if (!amt || amt <= 0) return toast('Invalid', 'err');
+  const { data, error } = await sb.rpc('update_purchase', {
+    p_uid: currentUser.id, p_id: p.id,
+    p_number: n.trim().padStart(3,'0'), p_amount: amt
+  });
+  if (error) return toast(error.message, 'err');
+  if (data?.error) {
+    const m = {
+      EDIT_WINDOW_EXPIRED: 'Edit window expired',
+      CANNOT_EDIT_AFTER_APPROVAL: 'Already approved',
+      SALES_CLOSED: 'Sales closed',
+      NUMBER_CLOSED: 'Number closed'
+    };
+    return toast(m[data.error] || data.error, 'err');
+  }
+  toast('✅ Updated', 'ok');
+  await loadUserData();
+}
+
+async function loadAnnouncement() {
+  const { data: dr } = await sb.from('draws').select('*')
+    .order('announced_at', { ascending: false }).limit(5);
+  const box = $('announceBox');
+  if (!dr?.length) { box.innerHTML = ''; return; }
+  let html = '';
+  for (const draw of dr.slice(0,5)) {
+  const { data: ws } = await sb.from('draw_winners').select('*, users(full_name)').eq('draw_id', draw.id);
+  html += `<div class="announce">
+    <div class="text-xs b" style="color:#92400e;letter-spacing:.5px">🎉 Lucky Draw Announcement</div>
+    <div class="num">${esc(draw.lucky_number)}</div><div class="text-xs">${esc(draw.month_key||'')}</div>`;
+  if (ws && ws.length) {
+    html += `<ul style="font-size:13px;padding-left:20px;color:#78350f;margin-top:6px">`;
+    ws.forEach(w => {
+      html += `<li>${esc(w.users?.full_name)} — Paid ${fmt(w.paid_total)}${w.is_paid ? ' · Refund ' + fmt(w.refund_coins) + ' ✅' : ''}</li>`;
+    });
+    html += `</ul>`;
+  } else html += `<div class="text-sm" style="color:#78350f">No winner</div>`;
+  html += '</div>';
+  }
+  box.innerHTML = html;
+}
+
+/* ═══════ PARTNERS — Multi-number group system ═══════ */
+async function loadPartners() {
+  if (!currentUser) return;
+  const { data } = await sb.from('partners').select('*')
+    .eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  dashState.partners = data || [];
+  renderPartners();
+}
+
+function addNumberRow(number = '', coin = '') {
+  const wrap = $('ptNumbers');
+  const row = document.createElement('div');
+  row.className = 'pt-num-row';
+  row.innerHTML = `
+    <input class="input mono" data-ptnum maxlength="3" inputmode="numeric"
+      placeholder="000" value="${esc(number)}" />
+    <input class="input mono" data-ptcoin inputmode="numeric"
+      placeholder="Coin" value="${esc(coin)}" />
+    <button type="button" class="del-x" data-ptdel>✕</button>
+  `;
+  const numInput = row.querySelector('[data-ptnum]');
+  const coinInput = row.querySelector('[data-ptcoin]');
+  numInput.oninput = e => {
+    e.target.value = e.target.value.replace(/\D/g,'').slice(0,3);
+    updatePartnerTotal();
+  };
+  coinInput.oninput = e => {
+    e.target.value = e.target.value.replace(/\D/g,'');
+    updatePartnerTotal();
+  };
+  row.querySelector('[data-ptdel]').onclick = () => {
+    if (wrap.children.length > 1) { row.remove(); updatePartnerTotal(); }
+    else toast('အနည်းဆုံး ၁ ခု လိုအပ်သည်', 'warn');
+  };
+  wrap.appendChild(row);
+  updatePartnerTotal();
+}
+
+function updatePartnerTotal() {
+  let total = 0, count = 0;
+  $('ptNumbers').querySelectorAll('.pt-num-row').forEach(row => {
+    const num = row.querySelector('[data-ptnum]').value.trim();
+    const coin = Number(row.querySelector('[data-ptcoin]').value || 0);
+    if (num) { count++; total += coin; }
+  });
+  $('ptTotalCoins').textContent = fmt(total);
+  $('ptTotalCount').textContent = count;
+}
+
+function resetPartnerForm() {
+  dashState.editingGroupId = null;
+  $('pt_name').value = '';
+  $('pt_phone').value = '';
+  $('pt_note').value = '';
+  $('ptNumbers').innerHTML = '';
+  addNumberRow();
+  $('ptSaveBtn').innerHTML = '💾 Save';
+}
+
+async function savePartner() {
+  const name = $('pt_name').value.trim();
+  const phone = $('pt_phone').value.trim();
+  const note = $('pt_note').value.trim();
+  if (!name) return toast('Partner အမည် ထည့်ပါ', 'err');
+
+  const items = [];
+  const rows = $('ptNumbers').querySelectorAll('.pt-num-row');
+  for (const row of rows) {
+    const num = row.querySelector('[data-ptnum]').value.trim();
+    const coin = Number(row.querySelector('[data-ptcoin]').value || 0);
+    if (!num) continue;
+    items.push({ number: num.padStart(3, '0'), coin: coin });
+  }
+  if (!items.length) return toast('နံပါတ် အနည်းဆုံး ၁ ခု ထည့်ပါ', 'err');
+
+  const isEdit = !!dashState.editingGroupId;
+  const rpc = isEdit ? 'partner_update_batch' : 'partner_add_batch';
+  const args = isEdit
+    ? { p_uid: currentUser.id, p_group_id: dashState.editingGroupId,
+        p_name: name, p_phone: phone, p_note: note, p_items: items }
+    : { p_uid: currentUser.id, p_name: name, p_phone: phone,
+        p_note: note, p_items: items };
+
+  const { data, error } = await sb.rpc(rpc, args);
+  if (error) return toast('❌ ' + error.message, 'err');
+  if (data?.error) return toast('❌ ' + data.error, 'err');
+
+  toast(isEdit ? '✅ ပြင်ပြီးပါပြီ' : `✅ Partner ထည့်ပြီး (${items.length} numbers)`, 'ok');
+  resetPartnerForm();
+  await loadPartners();
+}
+
+function renderPartners() {
+  const wrap = $('partnersList');
+  wrap.innerHTML = '';
+  const q = (dashState.ptSearch || '').toLowerCase();
+
+  const groups = {};
+  dashState.partners.forEach(p => {
+    const k = p.group_id || p.id;
+    if (!groups[k]) {
+      groups[k] = {
+        group_id: p.group_id,
+        fallback_id: p.id,
+        name: p.partner_name,
+        phone: p.partner_phone,
+        note: p.note,
+        items: [],
+        total: 0
+      };
+    }
+    groups[k].items.push({
+      id: p.id,
+      number: p.number,
+      coin: Number(p.coin_amount)
+    });
+    groups[k].total += Number(p.coin_amount);
+  });
+
+  let list = Object.values(groups);
+  list.forEach(g => g.items.sort((a, b) => a.number.localeCompare(b.number)));
+
+  if (q) {
+    list = list.filter(g =>
+      g.name.toLowerCase().includes(q) ||
+      (g.phone || '').includes(q) ||
+      (g.note || '').toLowerCase().includes(q) ||
+      g.items.some(it => it.number.includes(q))
+    );
+  }
+
+  $('ptCount').textContent = `${list.length} partners · ${dashState.partners.length} rows`;
+
+  if (!list.length) {
+    wrap.innerHTML = '<div class="empty">No records</div>';
+    return;
+  }
+
+  list.forEach(g => {
+    const card = document.createElement('div');
+    card.className = 'p-card';
+    const itemsHtml = g.items.map(it => `
+      <div class="p-item">
+        <span class="p-n">${esc(it.number)}</span>
+        <span class="p-c">${fmt(it.coin)}</span>
+      </div>
+    `).join('');
+
+    card.innerHTML = `
+      <div class="p-head">
+        <div style="flex:1;min-width:0">
+          <div class="p-name">👤 ${esc(g.name)}</div>
+          <div class="p-sub">${esc(g.phone || '-')}${g.note ? ' · 📝 ' + esc(g.note) : ''}</div>
+        </div>
+        <div class="p-actions">
+          <button class="btn btn-ghost btn-sm" data-edit>✏️</button>
+          <button class="btn btn-danger btn-sm" data-del>🗑️</button>
+        </div>
+      </div>
+      <div class="p-items">${itemsHtml}</div>
+      <div class="p-total">
+        <span>Total: ${fmt(g.total)}</span>
+        <span class="cnt">${g.items.length} numbers</span>
+      </div>
+    `;
+
+    card.querySelector('[data-edit]').onclick = () => editPartnerGroup(g);
+    card.querySelector('[data-del]').onclick = () => deletePartnerGroup(g);
+    wrap.appendChild(card);
+  });
+}
+
+function editPartnerGroup(g) {
+  dashState.editingGroupId = g.group_id;
+  $('pt_name').value = g.name;
+  $('pt_phone').value = g.phone || '';
+  $('pt_note').value = g.note || '';
+  $('ptNumbers').innerHTML = '';
+  g.items.forEach(it => addNumberRow(it.number, it.coin));
+  if (!g.items.length) addNumberRow();
+  $('ptSaveBtn').innerHTML = '💾 Update';
+  document.querySelector('[data-dtab="partners"]').click();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  toast('📝 Editing — ပြင်ပြီး Save နှိပ်ပါ', 'warn');
+}
+
+async function deletePartnerGroup(g) {
+  if (!g.group_id) {
+    if (!confirm(`Delete ${g.name}?`)) return;
+    const { error } = await sb.from('partners').delete()
+      .eq('id', g.fallback_id).eq('user_id', currentUser.id);
+    if (error) return toast('❌ ' + error.message, 'err');
+  } else {
+    if (!confirm(`${g.name} (${g.items.length} numbers) ကို ဖျက်မလား?`)) return;
+    const { data, error } = await sb.rpc('partner_delete_group', {
+      p_uid: currentUser.id, p_group_id: g.group_id
+    });
+    if (error) return toast('❌ ' + error.message, 'err');
+    if (data?.error) return toast('❌ ' + data.error, 'err');
+  }
+  toast('✅ Deleted', 'ok');
+  if (dashState.editingGroupId === g.group_id) resetPartnerForm();
+  await loadPartners();
+}
+
+/* ═══════ ADMIN PANEL ═══════ */
+let adminTab = 'overview';
+document.querySelectorAll('[data-atab]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('[data-atab]').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  adminTab = b.dataset.atab;
+  renderAdmin();
+});
+
+async function startAdmin() {
+  show('adminPanel');
+  $('adminInfo').textContent = `${currentUser.full_name} · ${currentUser.viber_phone}`;
+
+  liveChannels.forEach(c => { try { sb.removeChannel(c); } catch(e){} });
+  liveChannels = [];
+  const ch = sb.channel('admin-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'users' },
+        () => { if (['users','overview'].includes(adminTab)) renderAdmin(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'purchases' },
+        () => { if (['purchases','summary','overview','pending'].includes(adminTab)) renderAdmin(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'partners' },
+        () => { if (adminTab === 'partners') renderAdmin(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' },
+        () => { if (adminTab === 'sales') renderAdmin(); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'reset_requests' },
+        () => { if (adminTab === 'reset') renderAdmin(); })
+    .subscribe();
+  liveChannels.push(ch);
+  renderAdmin();
+}
+async function renderAdmin() {
+  const c = $('adminContent');
+  c.innerHTML = '<div class="empty"><span class="loading"></span></div>';
+  const fn = {
+    overview: renderOverview, pending: renderPending, users: renderUsers,
+    purchases: renderPurchases, periods: renderPeriods, partners: renderPartnersAdmin,
+    summary: renderSummary, rules: renderRules, sales: renderSales,
+    draw: renderDraw, reset: renderReset
+  }[adminTab];
+  try { await fn(c); init3DTilt(); }
+  catch (e) { c.innerHTML = '<div class="empty text-red">Error: ' + esc(e.message) + '</div>'; }
+}
+
+async function renderOverview(c) {
+  const { data: stats, error } = await sb.rpc('admin_get_stats', { p_uid: currentUser.id });
+  if (error) throw error;
+  if (stats?.error) throw new Error(stats.error);
+  c.innerHTML = `
+    <div class="grid-4">
+      <div class="stat-card stat-grad-1" data-tilt>
+        <div class="text-xs" style="opacity:.9">👥 Users</div>
+        <div style="font-size:28px;font-weight:800">${stats.users}</div>
+        <div class="text-xs" style="opacity:.75">Active ${stats.active_users}</div>
+      </div>
+      <div class="stat-card stat-grad-5" data-tilt>
+        <div class="text-xs" style="opacity:.9">⏳ Pending</div>
+        <div style="font-size:28px;font-weight:800">${stats.pending}</div>
+        <div class="text-xs" style="opacity:.75">Awaiting approval</div>
+      </div>
+      <div class="stat-card stat-grad-2" data-tilt>
+        <div class="text-xs" style="opacity:.9">💰 Total Coins</div>
+        <div style="font-size:28px;font-weight:800" class="mono">${fmt(stats.total_coins)}</div>
+      </div>
+      <div class="stat-card stat-grad-3" data-tilt>
+        <div class="text-xs" style="opacity:.9">💵 လက်ရှိကာလရောင်းရငွေ</div>
+        <div style="font-size:28px;font-weight:800" class="mono" id="overviewCurrentSales">…</div>
+        <div class="text-xs" style="opacity:.75" id="overviewCurrentRange">လက်ရှိကာလ</div>
+      </div>
+    </div>
+    <div class="grid-2 mt-3">
+      <div class="card">
+        <h3>⚠️ Alerts</h3>
+        <div class="row between" style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <span>🛑 Suspended/Banned</span><b>${stats.suspended}</b>
+        </div>
+        <div class="row between" style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <span>⏳ Pending</span><b class="${stats.pending > 0 ? 'text-red' : ''}">${stats.pending}</b>
+        </div>
+        <div class="row between" style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <span>🔑 Reset Requests</span><b>${stats.pending_reset}</b>
+        </div>
+        <div class="row between" style="padding:8px 0">
+          <span>📇 Partner Records</span><b>${stats.partners}</b>
+        </div>
+      </div>
+      <div class="card">
+        <h3>📅 This Month</h3>
+        <div class="row between" style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <span>Month</span><b class="mono">${monthKey()}</b>
+        </div>
+        <div class="row between" style="padding:8px 0">
+          <span>အရောင်းကာလ</span><b class="text-green">ကာလအလိုက် သီးခြားစာရင်း</b>
+        </div>
+      </div>
+    </div>
+    <div class="card mt-3"><h3>🗂️ ကာလတစ်ခုချင်းစီ၏ ရောင်းရငွေ</h3><div id="overviewPeriodSales" class="grid-2"><div class="text-muted">Loading…</div></div></div>`;
+  await renderOverviewPeriodSales();
+}
+
+async function renderOverviewPeriodSales() {
+  const box = $('overviewPeriodSales'); if (!box) return;
+  const { data: settings } = await sb.from('settings').select('sales_open_at,sales_close_at').eq('id',1).maybeSingle();
+  const { data: periods, error } = await sb.rpc('admin_list_sales_periods',{p_uid:currentUser.id});
+  if (error) { box.innerHTML = '<div class="text-xs text-muted">ကာလမှတ်တမ်းအတွက် SQL migration လုပ်ပါ။</div>'; return; }
+  const ranges = (periods || []).map(p => ({...p, archived:true}));
+  if (settings?.sales_open_at || settings?.sales_close_at) ranges.unshift({id:'current',period_name:'လက်ရှိကာလ',sales_open_at:settings.sales_open_at,sales_close_at:settings.sales_close_at,archived:false});
+  if (!ranges.length) { box.innerHTML = '<div class="empty">ကာလသတ်မှတ်ချက် မရှိပါ</div>'; return; }
+  const cards = [];
+  for (const p of ranges) {
+    let q = sb.from('purchases').select('total').in('status',['approved','pending']);
+    if (p.sales_open_at) q=q.gte('purchased_at',p.sales_open_at);
+    if (p.sales_close_at) q=q.lte('purchased_at',p.sales_close_at);
+    const {data,error:qerr}=await q;
+    if (qerr) continue;
+    const amount=(data||[]).reduce((a,x)=>a+Number(x.total||0),0);
+    cards.push(`<div class="card"><div class="text-xs text-muted">${p.archived?'🗃️ အဟောင်းကာလ':'🟢 လက်ရှိကာလ'}</div><b>${esc(p.period_name||'အရောင်းကာလ')}</b><div class="text-xs mt-1">${p.sales_open_at?fmtDT(p.sales_open_at):'—'} → ${p.sales_close_at?fmtDT(p.sales_close_at):'—'}</div><div class="text-green mono" style="font-size:22px;font-weight:800;margin-top:8px">${fmt(amount)}</div></div>`);
+  }
+  box.innerHTML=cards.join('')||'<div class="empty">စာရင်းမရှိပါ</div>';
+  const cur=ranges.find(p=>!p.archived);
+  if(cur){let q=sb.from('purchases').select('total').in('status',['approved','pending']);if(cur.sales_open_at)q=q.gte('purchased_at',cur.sales_open_at);if(cur.sales_close_at)q=q.lte('purchased_at',cur.sales_close_at);const {data}=await q;$('overviewCurrentSales').textContent=fmt((data||[]).reduce((a,x)=>a+Number(x.total||0),0));$('overviewCurrentRange').textContent=`${cur.sales_open_at?fmtDT(cur.sales_open_at):'—'} → ${cur.sales_close_at?fmtDT(cur.sales_close_at):'—'}`;}
+}
+
+async function renderPending(c) {
+  const { data: periodSettings } = await sb.from('settings').select('sales_open_at,sales_close_at').eq('id',1).maybeSingle();
+  let pendingQuery = sb.from('purchases').select('*, users(full_name, viber_phone)').eq('status','pending');
+  if (periodSettings?.sales_open_at) pendingQuery = pendingQuery.gte('purchased_at',periodSettings.sales_open_at);
+  if (periodSettings?.sales_close_at) pendingQuery = pendingQuery.lte('purchased_at',periodSettings.sales_close_at);
+  const { data } = await pendingQuery.order('purchased_at', { ascending: false });
+  const rows = data || [];
+  c.innerHTML = `
+    <div class="card">
+      <div class="row between mb-2">
+        <h3 style="margin:0">⏳ Pending (${rows.length})</h3>
+        ${rows.length > 1 ? '<button class="btn btn-success btn-sm" id="bulkApprove">✅ Approve All</button>' : ''}
+      </div>
+      ${rows.length === 0
+        ? '<div class="empty">✅ All approved</div>'
+        : `<div style="overflow:auto;max-height:600px">
+          <table><thead style="position:sticky;top:0;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);z-index:1">
+            <tr><th>User</th><th>Number</th><th style="text-align:right">Coin</th>
+            <th style="text-align:right">Total</th><th>Time</th><th>Actions</th></tr>
+          </thead><tbody id="pendingBody"></tbody></table>
+        </div>`}
+    </div>`;
+  const tb = $('pendingBody');
+  if (!tb) return;
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.className = 'pending-row';
+    tr.innerHTML = `
+      <td>${esc(r.users?.full_name)}<div class="text-xs text-muted">${esc(r.users?.viber_phone)}</div></td>
+      <td class="mono b" style="text-align:center;font-size:15px">${esc(r.number)}</td>
+      <td style="text-align:right" class="mono">${fmt(r.amount)}</td>
+      <td style="text-align:right" class="b text-green mono">${fmt(r.total)}</td>
+      <td class="text-xs text-muted">${fmtDT(r.purchased_at)}</td>
+      <td>
+        <div class="pill-group">
+          <button class="btn btn-success btn-sm" data-approve>✅</button>
+          <button class="btn btn-danger btn-sm" data-reject>❌</button>
+        </div>
+      </td>`;
+    tr.querySelector('[data-approve]').onclick = async () => {
+      const { data, error } = await sb.rpc('admin_approve_purchase', {
+        p_uid: currentUser.id, p_id: r.id
+      });
+      if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+      toast('✅ Approved', 'ok');
+      renderPending(c);
+    };
+    tr.querySelector('[data-reject]').onclick = async () => {
+      const reason = prompt('Reason?', 'Rejected');
+      if (reason === null) return;
+      const { data, error } = await sb.rpc('admin_reject_purchase', {
+        p_uid: currentUser.id, p_id: r.id, p_reason: reason || null
+      });
+      if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+      toast('✅ Rejected', 'ok');
+      renderPending(c);
+    };
+    tb.appendChild(tr);
+  });
+  if (rows.length > 1) {
+    $('bulkApprove').onclick = async () => {
+      if (!confirm(`Approve ${rows.length}?`)) return;
+      const ids = rows.map(r => r.id);
+      const { data, error } = await sb.rpc('admin_bulk_approve', {
+        p_uid: currentUser.id, p_ids: ids
+      });
+      if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+      toast(`✅ ${data.count} approved`, 'ok');
+      renderPending(c);
+    };
+  }
+}
+
+async function renderUsers(c) {
+  const { data: users, error: loadError } = await sb.from('users').select('*').eq('role','user')
+    .order('created_at', { ascending: false });
+  if (loadError) throw loadError;
+  c.innerHTML = `
+    <div class="grid-2" style="align-items:start">
+      <div class="card">
+        <h3>👥 User စီမံခန့်ခွဲမှု</h3>
+        <input class="input mb-2" id="userSearch" placeholder="🔍 အမည် / ဖုန်း ရှာရန်" />
+        <div style="overflow-x:auto;max-height:600px">
+          <table id="usersTable">
+            <thead><tr><th>Name</th><th>Viber</th><th style="text-align:right">Coin</th><th>ခွင့်ပြုကာလ</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card" id="topupBox"><h3>🛠️ User ပြင်ဆင်ရန်</h3><p class="text-sm text-muted">User တစ်ဦးကို ရွေးချယ်ပါ။</p></div>
+    </div>`;
+  const tb = document.querySelector('#usersTable tbody');
+  const renderRows = (q = '') => {
+    tb.innerHTML = '';
+    const filtered = (users||[]).filter(u => !q || u.full_name?.toLowerCase().includes(q.toLowerCase()) || u.viber_phone?.includes(q));
+    if (!filtered.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">စာရင်းမရှိပါ</td></tr>'; return; }
+    filtered.forEach(u => {
+      const expired = u.purchase_expires_at && new Date(u.purchase_expires_at) < new Date();
+      const badgeCls = expired ? 'badge-red' : ({ active:'badge-green', suspended:'badge-yellow', banned:'badge-red', closed:'badge-gray' }[u.status] || 'badge-gray');
+      const expText = u.purchase_expires_at ? fmtDT(u.purchase_expires_at) : 'မသတ်မှတ်ရသေး';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="b">${esc(u.full_name)}</td><td class="text-xs">${esc(u.viber_phone)}</td>
+        <td class="mono" style="text-align:right">${fmt(u.coin_balance)}</td><td class="text-xs">${esc(expText)}</td>
+        <td><span class="badge ${badgeCls}">${expired ? 'EXPIRED' : esc(u.status)}</span></td>
+        <td><div class="pill-group"><button class="btn btn-primary btn-sm" data-edit>ပြင်</button>
+        <button class="btn btn-ghost btn-sm" data-topup>Coin</button>
+        <button class="btn btn-danger btn-sm" data-delete>ဖယ်ရှား</button></div></td>`;
+      tr.querySelector('[data-edit]').onclick = () => openEdit(u);
+      tr.querySelector('[data-topup]').onclick = () => openTopup(u);
+      tr.querySelector('[data-delete]').onclick = () => archiveUser(u);
+      tb.appendChild(tr);
+    });
+  };
+  renderRows(); $('userSearch').oninput = e => renderRows(e.target.value);
+
+  function openEdit(u) {
+    $('topupBox').innerHTML = `<h3>✏️ User ပြင်ဆင်ရန်</h3>
+      <label>အမည်</label><input class="input" id="euName" value="${esc(u.full_name)}" />
+      <label>ဖုန်းနံပါတ်</label><input class="input" id="euPhone" inputmode="tel" value="${esc(u.viber_phone)}" />
+      <label>Coin လက်ကျန် (+/- ပြင်ရန်)</label><input class="input" id="euCoin" type="number" value="${Number(u.coin_balance||0)}" />
+      <label>ဝယ်ယူခွင့် ကုန်ဆုံးမည့်ရက်/အချိန်</label><input class="input" id="euExpiry" type="datetime-local" value="${u.purchase_expires_at ? new Date(new Date(u.purchase_expires_at).getTime()-new Date(u.purchase_expires_at).getTimezoneOffset()*60000).toISOString().slice(0,16) : ''}" />
+      <label>Account Status</label><select class="input" id="euStatus"><option value="active">active</option><option value="suspended">suspended</option><option value="banned">banned</option><option value="closed">closed</option></select>
+      <div class="info-box">ရက်/အချိန် မထည့်ထားလျှင် အကန့်အသတ်မရှိဟု သတ်မှတ်မည်။</div>
+      <button class="btn btn-primary mt-3" style="width:100%" id="euSave">Save Changes</button>
+      <button class="btn btn-ghost mt-2" style="width:100%" id="tpCancel">Cancel</button>`;
+    $('euStatus').value = u.status || 'active';
+    $('tpCancel').onclick = () => renderUsers(c);
+    $('euSave').onclick = async () => {
+      const name=$('euName').value.trim(), phone=norm($('euPhone').value), coin=Number($('euCoin').value);
+      if (!name || phone.length < 7 || !Number.isFinite(coin) || coin < 0) return toast('အချက်အလက် မှန်ကန်စွာ ဖြည့်ပါ', 'err');
+      const expiryVal = $('euExpiry').value;
+      const expiry = expiryVal ? new Date(expiryVal).toISOString() : null;
+      const {data,error}=await sb.rpc('admin_update_user_profile',{p_uid:currentUser.id,p_user:u.id,p_name:name,p_phone:phone,p_coin:coin,p_status:$('euStatus').value,p_expires:expiry});
+      if(error || data?.error) return toast('မအောင်မြင်ပါ: '+(error?.message||data.error),'err');
+      toast('User ပြင်ဆင်ပြီးပါပြီ','ok'); renderAdmin();
+    };
+  }
+  function openTopup(u) {
+    $('topupBox').innerHTML = `<h3>💰 Add Coin</h3><div class="b">${esc(u.full_name)} · ${esc(u.viber_phone)}</div>
+      <div class="text-sm mt-2">Balance: <b class="mono">${fmt(u.coin_balance)}</b></div>
+      <label>Amount (+/-)</label><input class="input" id="tpAmount" inputmode="numeric" placeholder="5000" />
+      <div class="pill-group mt-2">${[1000,5000,10000,50000].map(v=>`<span class="pill" data-amt="${v}">+${fmt(v)}</span>`).join('')}<span class="pill" data-amt="-1000">-1,000</span></div>
+      <label>Note</label><input class="input" id="tpNote" />
+      <button class="btn btn-primary mt-3" style="width:100%" id="tpBtn">Confirm</button>
+      <button class="btn btn-ghost mt-2" style="width:100%" id="tpCancel">Cancel</button>`;
+    document.querySelectorAll('#topupBox .pill[data-amt]').forEach(p=>p.onclick=()=> $('tpAmount').value=p.dataset.amt);
+    $('tpCancel').onclick=()=>renderUsers(c);
+    $('tpBtn').onclick=async()=>{const amt=Number($('tpAmount').value);if(!amt)return toast('Amount ထည့်ပါ','err');
+      const {data,error}=await sb.rpc('admin_add_coin',{p_uid:currentUser.id,p_user:u.id,p_amount:amt,p_note:$('tpNote').value||null});
+      if(error||data?.error)return toast('❌ '+(error?.message||data.error),'err');toast('Coin ပြင်ဆင်ပြီး','ok');renderAdmin();};
+  }
+  async function archiveUser(u) {
+    if (!confirm(`${u.full_name} ကို ဖယ်ရှားစာရင်း (closed) သို့ ရွှေ့မည်။ ယခင်ဝယ်ယူမှတ်တမ်းများ မဖျက်ပါ။ ဆက်လုပ်မလား?`)) return;
+    const {data,error}=await sb.rpc('admin_delete_user',{p_uid:currentUser.id,p_user:u.id});
+    if(error||data?.error)return toast('မအောင်မြင်ပါ: '+(error?.message||data.error),'err');
+    toast('User ကို closed စာရင်းသို့ ရွှေ့ပြီးပါပြီ','ok');renderAdmin();
+  }
+}
+
+async function renderPeriods(c) {
+  c.innerHTML = `<div class="card"><h3>🗂️ ပြီးဆုံးသွားသော ကာလမှတ်တမ်း</h3>
+    <p class="text-sm text-muted">ကာလအလိုက် သီးခြားပြန်ကြည့်နိုင်သည်။ စာရင်းဟောင်းများသည် လက်ရှိကာလနှင့် မပေါင်းပါ။ ရွေးချယ်ဖျက်ခြင်းသည် ဝယ်ယူမှတ်တမ်းကို အပြီးဖျက်မည်ဖြစ်သည်။</p>
+    <div class="grid-2"><div><label>စတင်ရက် / From</label><input class="input" type="date" id="periodFrom"></div><div><label>ပြီးဆုံးရက် / To</label><input class="input" type="date" id="periodTo"></div></div>
+    <div class="row mt-3" style="flex-wrap:wrap"><button class="btn btn-primary" id="periodSearch">မှတ်တမ်းကြည့်မည်</button><button class="btn btn-danger" id="periodDelete">ရွေးထားသောစာရင်းဖျက်မည်</button><button class="btn btn-ghost" id="periodCsv">CSV ထုတ်မည်</button><button class="btn btn-ghost" id="periodPrint">Print</button></div>
+    <div id="periodMeta" class="info-box mt-3">ရက်အပိုင်းအခြားရွေးပါ။</div><div style="overflow-x:auto;margin-top:12px"><table id="periodTable"><thead><tr><th><input type="checkbox" id="periodAll" /></th><th>User</th><th>နံပါတ်</th><th>Amount</th><th>Total</th><th>Status</th><th>ဝယ်ယူချိန်</th></tr></thead><tbody><tr><td colspan="7" class="empty">ရက်ရွေးပြီး Search နှိပ်ပါ</td></tr></tbody></table></div></div>`;
+  const today=new Date(); const isoDay=d=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
+  $('periodTo').value=isoDay(today); const earlier=new Date(today); earlier.setDate(earlier.getDate()-15); $('periodFrom').value=isoDay(earlier);
+  let records=[];
+  const load=async()=>{const from=$('periodFrom').value,to=$('periodTo').value;if(!from||!to||from>to)return toast('ရက်အပိုင်းအခြား မှန်ကန်စွာရွေးပါ','err');
+    const fromISO=new Date(from+'T00:00:00+06:30').toISOString(),toISO=new Date(to+'T23:59:59+06:30').toISOString();
+    const {data:activePeriod}=await sb.from('settings').select('sales_open_at').eq('id',1).maybeSingle();
+    let archiveQuery=sb.from('purchases').select('id,user_id,number,total,amount,status,purchased_at,users(full_name,viber_phone)').gte('purchased_at',fromISO).lte('purchased_at',toISO);
+    if(activePeriod?.sales_open_at) archiveQuery=archiveQuery.lt('purchased_at',activePeriod.sales_open_at);
+    const {data,error}=await archiveQuery.order('purchased_at',{ascending:false}).limit(2000);
+    if(error)return toast(error.message,'err');records=data||[];
+    const total=records.reduce((a,x)=>a+Number(x.total||0),0);
+    $('periodMeta').innerHTML=`📅 <b>${esc(from)}</b> → <b>${esc(to)}</b> · ဝယ်ယူမှတ်တမ်း ${records.length} ခု · စုစုပေါင်း ${fmt(total)}`;
+    $('periodTable').querySelector('tbody').innerHTML=records.length?records.map(r=>`<tr><td><input type="checkbox" data-period-id="${esc(r.id)}" /></td><td>${esc(r.users?.full_name||r.user_id)}<div class="text-xs text-muted">${esc(r.users?.viber_phone||'')}</div></td><td class="mono b">${esc(r.number)}</td><td class="mono">${fmt(r.amount)}</td><td class="mono">${fmt(r.total)}</td><td>${statusBadge(r.status)}</td><td class="text-xs">${fmtDT(r.purchased_at)}</td></tr>`).join(''):'<tr><td colspan="7" class="empty">ဤကာလအတွင်း စာရင်းမရှိပါ</td></tr>';
+    $('periodAll').checked=false;
+  };
+  $('periodAll').onchange=()=>document.querySelectorAll('[data-period-id]').forEach(x=>x.checked=$('periodAll').checked);
+  $('periodSearch').onclick=load;
+  $('periodDelete').onclick=async()=>{const ids=[...document.querySelectorAll('[data-period-id]:checked')].map(x=>x.dataset.periodId);if(!ids.length)return toast('ဖျက်ရန် စာရင်းရွေးပါ','warn');if(!confirm(`ရွေးထားသော ${ids.length} ခုကို အပြီးဖျက်မည်။ ပြန်ယူ၍မရပါ။ ဆက်လုပ်မလား?`))return;const {data,error}=await sb.rpc('admin_delete_purchase_records',{p_uid:currentUser.id,p_purchase_ids:ids});if(error||data?.error)return toast('ဖျက်မရပါ: '+(error?.message||data.error),'err');toast(`မှတ်တမ်း ${data.deleted||ids.length} ခု ဖျက်ပြီးပါပြီ`,'ok');await load();};
+  $('periodCsv').onclick=()=>{if(!records.length)return toast('ထုတ်ရန်စာရင်းမရှိပါ','warn');exportCSV([['ID','User','Phone','Number','Amount','Total','Status','Purchased At'],...records.map(r=>[r.id,r.users?.full_name||'',r.users?.viber_phone||'',r.number,r.amount,r.total,r.status,fmtDT(r.purchased_at)])],'archive_'+$('periodFrom').value+'_to_'+$('periodTo').value+'.csv');};
+  $('periodPrint').onclick=()=>window.print(); await load();
+}
+
+async function renderPurchases(c) {
+  const { data: activePeriod } = await sb.from('settings').select('sales_open_at,sales_close_at').eq('id',1).maybeSingle();
+  let purchaseQuery = sb.from('purchases').select('*, users(full_name, viber_phone)');
+  if (activePeriod?.sales_open_at) purchaseQuery = purchaseQuery.gte('purchased_at',activePeriod.sales_open_at);
+  if (activePeriod?.sales_close_at) purchaseQuery = purchaseQuery.lte('purchased_at',activePeriod.sales_close_at);
+  const { data } = await purchaseQuery.order('purchased_at', { ascending: false }).limit(500);
+  const rows = data || [];
+  c.innerHTML = `
+    <div class="card">
+      <div class="row between mb-2">
+        <input class="input" id="purSearch" placeholder="🔍 Search" style="flex:1;min-width:150px" />
+        <select class="input" id="statusFilter" style="max-width:150px">
+          <option value="">All</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" id="exportBtn">⬇️ CSV</button>
+      </div>
+      <div style="overflow:auto;max-height:600px">
+        <table><thead style="position:sticky;top:0;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);z-index:1">
+          <tr><th>User</th><th>Number</th><th style="text-align:right">Coin</th>
+          <th style="text-align:right">Total</th><th>Status</th><th>Time</th><th></th></tr>
+        </thead><tbody id="purBody"></tbody></table>
+      </div>
+    </div>`;
+  const tb = $('purBody');
+  let cur = [];
+  const render = () => {
+    const q = $('purSearch').value.trim();
+    const st = $('statusFilter').value;
+    tb.innerHTML = '';
+    cur = rows.filter(r =>
+      (!q || r.number.includes(q) || r.users?.full_name?.includes(q) || r.users?.viber_phone?.includes(q))
+      && (!st || r.status === st));
+    if (!cur.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">None</td></tr>'; return; }
+    cur.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${esc(r.users?.full_name)}<div class="text-xs text-muted">${esc(r.users?.viber_phone)}</div></td>
+        <td class="mono b" style="text-align:center">${esc(r.number)}</td>
+        <td style="text-align:right" class="mono">${fmt(r.amount)}</td>
+        <td style="text-align:right" class="b text-green mono">${fmt(r.total)}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td class="text-xs text-muted">${fmtDT(r.purchased_at)}</td>
+        <td>
+          <div class="pill-group">
+            <button class="btn btn-ghost btn-sm" data-edit>Edit</button>
+            <button class="btn btn-danger btn-sm" data-del>Del</button>
+          </div>
+        </td>`;
+      tr.querySelector('[data-edit]').onclick = async () => {
+        const n = prompt('Number', r.number); if (!n) return;
+        const a = prompt('Amount', String(r.amount)); if (!a) return;
+        const { data, error } = await sb.rpc('admin_update_purchase', {
+          p_uid: currentUser.id, p_id: r.id,
+          p_number: n.trim().padStart(3,'0'), p_amount: Number(a)
+        });
+        if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+        toast('✅ Updated', 'ok');
+        renderPurchases(c);
+      };
+      tr.querySelector('[data-del]').onclick = async () => {
+        if (!confirm('Delete?')) return;
+        const { data, error } = await sb.rpc('admin_delete_purchase', {
+          p_uid: currentUser.id, p_id: r.id
+        });
+        if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+        toast('✅ Deleted', 'ok');
+        renderPurchases(c);
+      };
+      tb.appendChild(tr);
+    });
+  };
+  render();
+  $('purSearch').oninput = render;
+  $('statusFilter').onchange = render;
+  $('exportBtn').onclick = () => {
+    const rowsCsv = [['Name','Viber','Number','Coin','Total','Status','Time']];
+    cur.forEach(r => rowsCsv.push([
+      r.users?.full_name || '', r.users?.viber_phone || '', r.number,
+      r.amount, r.total, r.status, fmtDT(r.purchased_at)
+    ]));
+    exportCSV(rowsCsv, 'purchases_' + monthKey());
+  };
+}
+
+async function renderPartnersAdmin(c) {
+  const { data } = await sb.from('partners')
+    .select('*, users(full_name, viber_phone)')
+    .order('created_at', { ascending: false }).limit(2000);
+  const rows = data || [];
+  c.innerHTML = `
+    <div class="card">
+      <div class="row between mb-2">
+        <input class="input" id="adPtSearch" placeholder="🔍 Search" style="flex:1" />
+        <button class="btn btn-ghost btn-sm" id="adPtExport">⬇️ CSV</button>
+        <span class="text-xs text-muted">${rows.length} rows</span>
+      </div>
+      <div style="overflow:auto;max-height:640px">
+        <table><thead style="position:sticky;top:0;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);z-index:1">
+          <tr><th>User</th><th>Number</th><th>Partner</th><th>Phone</th>
+          <th style="text-align:right">Coin</th><th>Note</th><th>Date</th></tr>
+        </thead><tbody id="adPtBody"></tbody></table>
+      </div>
+    </div>`;
+  const tb = $('adPtBody');
+  let cur = [];
+  const render = () => {
+    const q = $('adPtSearch').value.trim().toLowerCase();
+    tb.innerHTML = '';
+    cur = rows.filter(r =>
+      !q || r.number.includes(q) || (r.partner_name||'').toLowerCase().includes(q)
+        || (r.partner_phone||'').includes(q) || (r.users?.full_name||'').toLowerCase().includes(q)
+        || (r.users?.viber_phone||'').includes(q));
+    if (!cur.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">None</td></tr>'; return; }
+    cur.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${esc(r.users?.full_name)}<div class="text-xs text-muted">${esc(r.users?.viber_phone)}</div></td>
+        <td class="mono b" style="text-align:center">${esc(r.number)}</td>
+        <td class="b">${esc(r.partner_name)}</td>
+        <td class="text-xs">${esc(r.partner_phone || '-')}</td>
+        <td style="text-align:right" class="mono">${fmt(r.coin_amount)}</td>
+        <td class="text-xs text-muted">${esc(r.note || '-')}</td>
+        <td class="text-xs text-muted">${fmtDT(r.created_at)}</td>`;
+      tb.appendChild(tr);
+    });
+  };
+  render();
+  $('adPtSearch').oninput = render;
+  $('adPtExport').onclick = () => {
+    const rowsCsv = [['User','Viber','Number','Partner','Phone','Coin','Note','Date']];
+    cur.forEach(r => rowsCsv.push([
+      r.users?.full_name || '', r.users?.viber_phone || '', r.number,
+      r.partner_name, r.partner_phone, r.coin_amount, r.note || '', fmtDT(r.created_at)
+    ]));
+    exportCSV(rowsCsv, 'partners_' + monthKey());
+  };
+}
+
+/* ═══════ SUMMARY — Date Range + Compact Grid ═══════ */
+async function renderSummary(c) {
+  const _fmtDate = (d) => new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(d);
+
+  const today = new Date();
+  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const { data: initialSettings } = await sb.from('settings').select('sales_open_at,sales_close_at').eq('id',1).maybeSingle();
+  const initialFrom = initialSettings?.sales_open_at ? new Date(initialSettings.sales_open_at) : firstOfMonth;
+  let initialTo = initialSettings?.sales_close_at && new Date(initialSettings.sales_close_at) < today ? new Date(initialSettings.sales_close_at) : today;
+  if (initialTo < initialFrom) initialTo = new Date(initialFrom);
+
+  c.innerHTML = `
+    <div class="card" id="sumRoot">
+      <div class="row between mb-3">
+        <div>
+          <div class="text-xs text-muted">📅 Date Range Summary</div>
+          <h3 style="margin:4px 0 0">📊 ရောင်းရသည့် နံပါတ်များ</h3>
+        </div>
+      </div>
+
+      <div class="row mb-2" style="gap:8px;align-items:flex-end">
+        <div style="flex:1;min-width:130px">
+          <label>မှ / From</label>
+          <input type="date" class="input" id="sumFrom" value="${_fmtDate(initialFrom)}" />
+        </div>
+        <div style="flex:1;min-width:130px">
+          <label>ထိ / To</label>
+          <input type="date" class="input" id="sumTo" value="${_fmtDate(initialTo)}" />
+        </div>
+      </div>
+
+      <div class="pill-group mb-3">
+        <span class="pill" data-quick="today">📅 Today</span>
+        <span class="pill" data-quick="7d">7 Days</span>
+        <span class="pill" data-quick="30d">30 Days</span>
+        <span class="pill" data-quick="month">This Month</span>
+        <span class="pill" data-quick="lastmonth">Last Month</span>
+      </div>
+
+      <div class="grid-3 mb-3">
+        <div class="stat-card stat-grad-1" data-tilt>
+          <div class="text-xs" style="opacity:.9">🔢 နံပါတ် အရေအတွက်</div>
+          <div style="font-size:24px;font-weight:800" id="sumNumbers">0</div>
+        </div>
+        <div class="stat-card stat-grad-2" data-tilt>
+          <div class="text-xs" style="opacity:.9">💰 Coin စုစုပေါင်း</div>
+          <div style="font-size:24px;font-weight:800" class="mono" id="sumGrand">0</div>
+        </div>
+        <div class="stat-card stat-grad-3" data-tilt>
+          <div class="text-xs" style="opacity:.9">💵 Cost စုစုပေါင်း</div>
+          <div style="font-size:24px;font-weight:800" class="mono" id="sumCost">0</div>
+        </div>
+      </div>
+
+      <div class="row between mb-2" style="gap:8px">
+        <div class="text-xs text-muted" id="sumRangeLabel">-</div>
+        <div class="pill-group">
+          <button class="btn btn-ghost btn-sm" id="expSum">⬇️ CSV</button>
+          <button class="btn btn-ghost btn-sm" id="printSum">📸 Print</button>
+        </div>
+      </div>
+
+      <div id="sumGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px"></div>
+    </div>`;
+
+  let lastData = [];
+
+  const load = async () => {
+    const fromStr = $('sumFrom').value;
+    const toStr = $('sumTo').value;
+    if (!fromStr || !toStr) return;
+
+    const fromISO = new Date(fromStr + 'T00:00:00+06:30').toISOString();
+    const toISO   = new Date(toStr   + 'T23:59:59+06:30').toISOString();
+
+    const { data, error } = await sb.from('purchases')
+      .select('number, total, amount, status, purchased_at')
+      .gte('purchased_at', fromISO)
+      .lte('purchased_at', toISO)
+      .in('status', ['approved', 'pending']);
+
+    if (error) { toast(error.message, 'err'); return; }
+
+    const map = {};
+    (data || []).forEach(p => {
+      const k = p.number;
+      if (!map[k]) map[k] = { total: 0, cost: 0, count: 0 };
+      map[k].total += Number(p.total);
+      map[k].cost  += Number(p.amount);
+      map[k].count += 1;
+    });
+
+    const sorted = Object.entries(map).sort((a, b) => b[1].total - a[1].total);
+    lastData = sorted.map(([n, v]) => ({
+      number: n, total: v.total, cost: v.cost, count: v.count
+    }));
+
+    const grandTotal = sorted.reduce((a, b) => a + b[1].total, 0);
+    const grandCost  = sorted.reduce((a, b) => a + b[1].cost, 0);
+
+    $('sumNumbers').textContent = sorted.length;
+    $('sumGrand').textContent = fmt(grandTotal);
+    $('sumCost').textContent  = fmt(grandCost);
+    $('sumRangeLabel').innerHTML =
+      `📅 <b>${fromStr}</b> → <b>${toStr}</b> &nbsp;•&nbsp; 📋 ${(data||[]).length} purchases`;
+
+    renderGrid();
+  };
+
+  const renderGrid = () => {
+    const grid = $('sumGrid');
+    grid.innerHTML = '';
+
+    if (!lastData.length) {
+      grid.innerHTML = '<div class="empty" style="grid-column:1/-1">မတွေ့ပါ / No data in this range</div>';
+      return;
+    }
+
+    lastData.forEach((d, i) => {
+      const card = document.createElement('div');
+      let borderColor = 'rgba(226,232,240,.9)';
+      let bgColor = 'linear-gradient(135deg,#fff,#f8fafc)';
+      let rankEmoji = '';
+      let glowColor = 'rgba(99,102,241,.15)';
+      if (i === 0) { borderColor = '#ef4444'; bgColor = 'linear-gradient(135deg,#fef2f2,#fee2e2)'; rankEmoji = '🥇'; glowColor = 'rgba(239,68,68,.3)'; }
+      else if (i === 1) { borderColor = '#f59e0b'; bgColor = 'linear-gradient(135deg,#fffbeb,#fef3c7)'; rankEmoji = '🥈'; glowColor = 'rgba(245,158,11,.3)'; }
+      else if (i === 2) { borderColor = '#64748b'; bgColor = 'linear-gradient(135deg,#f8fafc,#e2e8f0)'; rankEmoji = '🥉'; glowColor = 'rgba(100,116,139,.25)'; }
+
+      card.style.cssText = `
+        background:${bgColor};
+        border:1.5px solid ${borderColor};
+        border-radius:12px;
+        padding:8px 6px;
+        text-align:center;
+        position:relative;
+        min-height:78px;
+        box-shadow:0 4px 14px ${glowColor},inset 0 1px 0 rgba(255,255,255,.8);
+        transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .35s;
+        cursor:default;
+      `;
+      card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-4px) scale(1.04)';
+        card.style.boxShadow = `0 12px 28px ${glowColor},inset 0 1px 0 rgba(255,255,255,.8)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = '';
+        card.style.boxShadow = `0 4px 14px ${glowColor},inset 0 1px 0 rgba(255,255,255,.8)`;
+      });
+
+      card.innerHTML = `
+        ${rankEmoji ? `<div style="position:absolute;top:2px;right:4px;font-size:12px">${rankEmoji}</div>` : ''}
+        <div style="font-family:'Courier New',monospace;font-size:19px;font-weight:800;
+          color:var(--primary);line-height:1.1;letter-spacing:.5px">${esc(d.number)}</div>
+        <div style="font-family:'Courier New',monospace;font-size:16px;font-weight:800;
+          color:var(--success);margin-top:6px">${fmt(d.total)}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px;line-height:1.2">
+          ${d.count}× &nbsp;•&nbsp; cost ${fmt(d.cost)}
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  };
+
+  await load();
+
+  $('sumFrom').onchange = load;
+  $('sumTo').onchange   = load;
+
+  document.querySelectorAll('#sumRoot [data-quick]').forEach(b => b.onclick = () => {
+    const t = new Date();
+    let f = new Date(t);
+    const q = b.dataset.quick;
+    if (q === 'today') { /* same */ }
+    else if (q === '7d')  f.setDate(t.getDate() - 6);
+    else if (q === '30d') f.setDate(t.getDate() - 29);
+    else if (q === 'month') f = new Date(t.getFullYear(), t.getMonth(), 1);
+    else if (q === 'lastmonth') {
+      f = new Date(t.getFullYear(), t.getMonth() - 1, 1);
+      const lastDay = new Date(t.getFullYear(), t.getMonth(), 0);
+      $('sumFrom').value = _fmtDate(f);
+      $('sumTo').value   = _fmtDate(lastDay);
+      load(); return;
+    }
+    $('sumFrom').value = _fmtDate(f);
+    $('sumTo').value   = _fmtDate(t);
+    load();
+  });
+
+  $('expSum').onclick = () => {
+    if (!lastData.length) return toast('No data', 'err');
+    const rowsCsv = [['Number', 'Total Coins', 'Times Bought', 'Cost']];
+    lastData.forEach(d => rowsCsv.push([d.number, d.total, d.count, d.cost]));
+    exportCSV(rowsCsv, `summary_${$('sumFrom').value}_to_${$('sumTo').value}`);
+  };
+
+  $('printSum').onclick = () => {
+    const w = window.open('', '_blank', 'width=800,height=900');
+    const rows = lastData.map((d, i) => {
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+      return `<div class="cell">
+        ${medal ? `<div class="medal">${medal}</div>` : ''}
+        <div class="num">${esc(d.number)}</div>
+        <div class="coin">${fmt(d.total)}</div>
+        <div class="meta">${d.count}× • cost ${fmt(d.cost)}</div>
+      </div>`;
+    }).join('');
+
+    w.document.write(`
+      <html><head><title>Summary</title>
+      <style>
+        body{font-family:'Myanmar Text','Pyidaungsu',system-ui,sans-serif;padding:16px;background:#fff}
+        h1{font-size:20px;margin:0 0 6px}
+        .sub{font-size:12px;color:#64748b;margin-bottom:14px}
+        .stats{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+        .stat{background:linear-gradient(135deg,#eef2ff,#e0e7ff);padding:10px 14px;border-radius:12px;min-width:130px;box-shadow:0 4px 12px rgba(99,102,241,.15)}
+        .stat b{display:block;font-size:20px;color:#4f46e5;font-family:'Courier New',monospace}
+        .stat span{font-size:11px;color:#64748b}
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px}
+        .cell{border:1.5px solid #e2e8f0;border-radius:10px;padding:8px 6px;
+          text-align:center;position:relative;min-height:78px;background:#fff;
+          box-shadow:0 2px 8px rgba(0,0,0,.04)}
+        .num{font-family:'Courier New',monospace;font-size:19px;font-weight:800;color:#4f46e5}
+        .coin{font-family:'Courier New',monospace;font-size:16px;font-weight:800;
+          color:#10b981;margin-top:6px}
+        .meta{font-size:9px;color:#64748b;margin-top:2px}
+        .medal{position:absolute;top:2px;right:4px;font-size:12px}
+        @media print{body{padding:6px}}
+      </style></head><body>
+        <h1>📊 ရောင်းရသည့် နံပါတ်များ</h1>
+        <div class="sub">📅 ${$('sumFrom').value} → ${$('sumTo').value}</div>
+        <div class="stats">
+          <div class="stat"><b>${$('sumNumbers').textContent}</b><span>နံပါတ် အရေအတွက်</span></div>
+          <div class="stat"><b>${$('sumGrand').textContent}</b><span>Coin စုစုပေါင်း</span></div>
+          <div class="stat"><b>${$('sumCost').textContent}</b><span>Cost စုစုပေါင်း</span></div>
+        </div>
+        <div class="grid">${rows}</div>
+      </body></html>
+    `);
+    w.document.close();
+    setTimeout(() => w.print(), 400);
+  };
+}
+
+async function renderRules(c) {
+  const { data } = await sb.from('number_rules').select('*').order('number');
+  const rules = data || [];
+  c.innerHTML = `
+    <div class="card">
+      <div class="row between mb-2">
+        <input class="input" id="ruleSearch" placeholder="🔍 000-999" maxlength="3"
+          inputmode="numeric" style="flex:1" />
+        <div class="text-xs text-muted">${rules.length} numbers</div>
+      </div>
+      <div class="info-box mb-2">Limit သတ်မှတ်ရင် total ရောက်တာနဲ့ auto-close။</div>
+      <div style="overflow:auto;max-height:600px">
+        <table><thead style="position:sticky;top:0;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);z-index:1">
+          <tr><th>Number</th><th>Status</th><th>Limit</th><th>Sold</th><th></th></tr>
+        </thead><tbody id="ruleBody"></tbody></table>
+      </div>
+    </div>`;
+  const month = monthKey();
+  const { data: activeSettings } = await sb.from('settings').select('sales_open_at,sales_close_at').eq('id',1).maybeSingle();
+  let salesQuery = sb.from('purchases').select('number,total').in('status',['pending','approved']);
+  if (activeSettings?.sales_open_at) salesQuery = salesQuery.gte('purchased_at',activeSettings.sales_open_at);
+  else salesQuery = salesQuery.eq('month_key',month);
+  if (activeSettings?.sales_close_at) salesQuery = salesQuery.lte('purchased_at',activeSettings.sales_close_at);
+  const { data: salesData } = await salesQuery;
+  const sold = {};
+  (salesData || []).forEach(p => sold[p.number] = (sold[p.number]||0) + Number(p.total));
+  const tb = $('ruleBody');
+  const render = (q = '') => {
+    tb.innerHTML = '';
+    const filtered = q ? rules.filter(r => r.number.includes(q)) : rules;
+    filtered.forEach(r => {
+      const total = sold[r.number] || 0;
+      const limit = r.max_amount;
+      const reached = limit != null && total >= Number(limit);
+      let statusBadge = '';
+      if (r.auto_closed) statusBadge = '<span class="badge badge-red">🔴 Auto</span>';
+      else if (r.is_closed) statusBadge = '<span class="badge badge-gray">⚪ Closed</span>';
+      else if (reached) statusBadge = '<span class="badge badge-yellow">🟡 Limit</span>';
+      else statusBadge = '<span class="badge badge-green">🟢 Open</span>';
+      const tr = document.createElement('tr');
+      if (reached || r.auto_closed) tr.style.background = 'linear-gradient(90deg,rgba(254,242,242,.8),rgba(254,226,226,.5))';
+      tr.innerHTML = `
+        <td class="mono b" style="text-align:center;font-size:14px">${esc(r.number)}</td>
+        <td style="text-align:center">
+          ${statusBadge}
+          <div class="mt-2"><input type="checkbox" ${r.is_closed ? 'checked' : ''} data-closed />
+          <span class="text-xs">Close</span></div>
+        </td>
+        <td style="text-align:center">
+          <input class="input" style="width:110px;text-align:center;padding:6px;font-size:12px"
+            data-max value="${r.max_amount ?? ''}" placeholder="∞" inputmode="numeric" />
+        </td>
+        <td style="text-align:center" class="mono">
+          <b>${fmt(total)}</b>${limit != null ? `<div class="text-xs text-muted">/ ${fmt(limit)}</div>` : ''}
+        </td>
+        <td style="text-align:center"><button class="btn btn-primary btn-sm" data-save>Save</button></td>`;
+      tr.querySelector('[data-save]').onclick = async () => {
+        const is_closed = tr.querySelector('[data-closed]').checked;
+        const maxV = tr.querySelector('[data-max]').value.replace(/\D/g,'');
+        const { data, error } = await sb.rpc('admin_set_number_rule', {
+          p_uid: currentUser.id, p_number: r.number,
+          p_is_closed: is_closed, p_max_amount: maxV ? Number(maxV) : null
+        });
+        if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+        toast(`✅ ${r.number} saved`, 'ok');
+        renderRules(c);
+      };
+      tb.appendChild(tr);
+    });
+    if (!filtered.length) tb.innerHTML = '<tr><td colspan="5" class="empty">None</td></tr>';
+  };
+  render();
+  $('ruleSearch').oninput = e => {
+    e.target.value = e.target.value.replace(/\D/g,'');
+    render(e.target.value);
+  };
+}
+
+async function renderSales(c) {
+  const { data: s } = await sb.from('settings').select('*').eq('id', 1).single();
+  c.innerHTML = `
+    <div class="grid-2">
+      <div class="card">
+        <h3>⏰ Sales Window</h3>
+        <label>📅 Open Date & Time</label>
+        <div class="dt-row">
+          <input type="date" class="input" id="openDate" />
+          <input type="time" class="input" id="openTime" step="60" />
+          <select class="input" id="openAmpm"><option>AM</option><option>PM</option></select>
+        </div>
+        <label>📅 Close Date & Time</label>
+        <div class="dt-row">
+          <input type="date" class="input" id="closeDate" />
+          <input type="time" class="input" id="closeTime" step="60" />
+          <select class="input" id="closeAmpm"><option>AM</option><option>PM</option></select>
+        </div>
+        <div class="info-box mt-2" id="rangePreview">Open: - <br>Close: -</div>
+        <div class="row mt-3">
+          <button class="btn btn-success flex-1" id="openBtn">🟢 Open Now</button>
+          <button class="btn btn-danger flex-1" id="closeBtn">🔒 Close Now</button>
+        </div>
+        <button class="btn btn-primary mt-2" style="width:100%" id="saveRange">💾 Save Schedule</button>
+      </div>
+      <div class="card">
+        <h3>⚙️ Settings</h3>
+        <label>Bonus %</label>
+        <input class="input" id="bonus" value="${s.bonus_percent}" />
+        <label>Edit window (min)</label>
+        <input class="input" id="window" value="${s.edit_window_minutes}" />
+        <label style="margin-top:14px">
+          <input type="checkbox" id="requireApproval" ${s.require_approval ? 'checked' : ''} />
+          Require Admin Approval
+        </label>
+        <button class="btn btn-primary mt-3" style="width:100%" id="saveSettings">Save</button>
+        <div class="info-box mt-2">
+          5,000 × (1 + <span id="exB">${s.bonus_percent}</span>/100) = <b id="exT">${fmt(5000 * (1 + s.bonus_percent/100))}</b>
+        </div>
+        <div class="mt-3">
+          <h4 class="text-sm b">Current State</h4>
+          <div class="text-sm mt-2">
+            <div class="row between" style="padding:4px 0"><span>Closed</span><b>${s.sales_closed ? '🔒 Yes' : '🟢 No'}</b></div>
+            <div class="row between" style="padding:4px 0"><span>Open At</span><b class="mono">${s.sales_open_at ? fmtDT(s.sales_open_at) : 'Immediate'}</b></div>
+            <div class="row between" style="padding:4px 0"><span>Close At</span><b class="mono">${s.sales_close_at ? fmtDT(s.sales_close_at) : 'Not set'}</b></div>
+            <div class="row between" style="padding:4px 0"><span>Require Approval</span><b>${s.require_approval ? '✅' : '❌'}</b></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  const parseISO = (iso) => {
+    if (!iso) return { d: '', t: '', ap: 'AM' };
+    const d = new Date(iso);
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year:'numeric', month:'2-digit', day:'2-digit' }).format(d).split('-');
+    const tp = new Intl.DateTimeFormat('en-US', { timeZone: TZ, hour:'2-digit', minute:'2-digit', hour12:true }).formatToParts(d);
+    let hh = '12', mm = '00', ap = 'AM';
+    tp.forEach(p => {
+      if (p.type === 'hour') hh = p.value;
+      if (p.type === 'minute') mm = p.value;
+      if (p.type === 'dayPeriod') ap = p.value.toUpperCase();
+    });
+    return { d: parts.join('-'), t: `${hh}:${mm}`, ap };
+  };
+  const openP = parseISO(s.sales_open_at);
+  const closeP = parseISO(s.sales_close_at);
+  $('openDate').value = openP.d; $('openTime').value = openP.t; $('openAmpm').value = openP.ap;
+  $('closeDate').value = closeP.d; $('closeTime').value = closeP.t; $('closeAmpm').value = closeP.ap;
+
+  const combine = (dateStr, timeStr, ampm) => {
+    if (!dateStr) return null;
+    let [hh, mm] = (timeStr || '12:00').split(':').map(Number);
+    if (ampm === 'PM' && hh < 12) hh += 12;
+    if (ampm === 'AM' && hh === 12) hh = 0;
+    const iso = `${dateStr}T${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:00+06:30`;
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  };
+  const updateRange = () => {
+    const o = combine($('openDate').value, $('openTime').value, $('openAmpm').value);
+    const cl = combine($('closeDate').value, $('closeTime').value, $('closeAmpm').value);
+    $('rangePreview').innerHTML = `
+      Open: <b>${o ? fmtDT(o) : '(Immediate)'}</b><br>
+      Close: <b>${cl ? fmtDT(cl) : '(Not set)'}</b>`;
+  };
+  ['openDate','openTime','openAmpm','closeDate','closeTime','closeAmpm'].forEach(id => {
+    $(id).oninput = updateRange; $(id).onchange = updateRange;
+  });
+  updateRange();
+  const updateEx = () => {
+    const b = Number($('bonus').value) || 0;
+    $('exB').textContent = b;
+    $('exT').textContent = fmt(Math.round(5000 * (1 + b/100)));
+  };
+  $('bonus').oninput = updateEx;
+  const save = async (closedVal) => {
+    const o = combine($('openDate').value, $('openTime').value, $('openAmpm').value);
+    const cl = combine($('closeDate').value, $('closeTime').value, $('closeAmpm').value);
+    const { data, error } = await sb.rpc('admin_update_settings', {
+      p_uid: currentUser.id, p_sales_closed: closedVal,
+      p_sales_open_at: o, p_sales_close_at: cl,
+      p_bonus: Number($('bonus').value), p_window: Number($('window').value),
+      p_require_approval: $('requireApproval').checked
+    });
+    if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+    toast('✅ Saved', 'ok');
+    renderSales(c);
+  };
+  $('openBtn').onclick = () => save(false);
+  $('closeBtn').onclick = () => save(true);
+  $('saveRange').onclick = () => save(s.sales_closed);
+  $('saveSettings').onclick = () => save(s.sales_closed);
+}
+
+async function renderDraw(c) {
+  const { data: draws } = await sb.from('draws').select('*').order('announced_at', { ascending: false }).limit(5);
+  c.innerHTML = `
+    <div class="grid-2" style="align-items:start">
+      <div class="card">
+        <h3>🎉 Lucky Number</h3>
+        <label>Month</label>
+        <input type="month" class="input" id="drawMonth" value="${monthKey()}" />
+        <label>Lucky Number (000-999)</label>
+        <input class="input mono" id="luckyNum" maxlength="3" inputmode="numeric"
+          style="text-align:center;font-size:30px;font-weight:800;padding:14px" placeholder="000" />
+        <button class="btn btn-warning mt-3" style="width:100%" id="announceBtn">🎉 Announce</button>
+        <h4 class="mt-3 text-sm b">Previous</h4>
+        <div id="drawList" style="max-height:250px;overflow:auto;margin-top:8px"></div>
+      </div>
+      <div class="card" id="drawResult"><p class="text-muted">Select a draw</p></div>
+    </div>`;
+  $('luckyNum').oninput = e => e.target.value = e.target.value.replace(/\D/g,'').slice(0,3);
+  const dList = $('drawList');
+  if (!draws?.length) dList.innerHTML = '<div class="text-xs text-muted">None yet</div>';
+  draws?.forEach(d => {
+    const b = document.createElement('button');
+    b.className = 'btn btn-ghost mb-2';
+    b.style.cssText = 'width:100%;text-align:left;display:flex;justify-content:space-between';
+    b.innerHTML = `<span class="mono b" style="font-size:16px">${esc(d.lucky_number)}</span>
+                   <span class="text-xs text-muted">${esc(d.month_key)}</span>`;
+    b.onclick = () => showDrawResult(d);
+    dList.appendChild(b);
+  });
+  async function showDrawResult(d) {
+    const { data: ws } = await sb.from('draw_winners')
+      .select('*, users(full_name, viber_phone)').eq('draw_id', d.id);
+    const { data: buyers } = await sb.from('purchases')
+      .select('*, users(full_name, viber_phone)')
+      .eq('number', d.lucky_number).eq('month_key', d.month_key).eq('status', 'approved');
+    const box = $('drawResult');
+    let html = `<h3>Result — <span class="mono" style="font-size:24px;color:#d97706">${esc(d.lucky_number)}</span>
+                <span class="text-xs text-muted">${esc(d.month_key)}</span></h3>`;
+    if (!ws?.length) html += '<div class="empty">No winner</div>';
+    else {
+      html += `<table><thead><tr><th>Name</th><th style="text-align:right">Paid</th>
+        <th>Refund</th><th>Status</th></tr></thead><tbody>`;
+      ws.forEach(w => {
+        html += `<tr>
+          <td>${esc(w.users?.full_name)}<div class="text-xs text-muted">${esc(w.users?.viber_phone)}</div></td>
+          <td style="text-align:right" class="mono">${fmt(w.paid_total)}</td>
+          <td style="text-align:center">
+            ${w.is_paid ? `<b class="text-green mono">${fmt(w.refund_coins)}</b>`
+              : `<input class="input mono" data-refund="${w.id}" value="${w.refund_coins || w.paid_total}"
+                  style="width:100px;text-align:center;padding:6px" inputmode="numeric" />`}
+          </td>
+          <td style="text-align:center">
+            ${w.is_paid ? '<span class="text-green text-xs">✅</span>'
+              : `<button class="btn btn-success btn-sm" data-pay="${w.id}">Pay</button>`}
+          </td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    if (buyers?.length) {
+      html += `<div class="info-box mt-3"><b>Buyers (${buyers.length})</b><br>
+        ${buyers.map(b => `${esc(b.users?.full_name)} (${fmt(b.total)})`).join(' · ')}</div>`;
+    }
+    box.innerHTML = html;
+    box.querySelectorAll('[data-pay]').forEach(btn => btn.onclick = async () => {
+      const id = btn.dataset.pay;
+      const amt = Number(box.querySelector(`[data-refund="${id}"]`).value);
+      if (!amt || amt < 0) return toast('Amount?', 'err');
+      const { data, error } = await sb.rpc('admin_pay_winner', {
+        p_uid: currentUser.id, p_winner: id, p_refund: amt
+      });
+      if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+      toast('✅ Paid', 'ok');
+      showDrawResult(d);
+    });
+  }
+  $('announceBtn').onclick = async () => {
+    const n = $('luckyNum').value;
+    const m = $('drawMonth').value;
+    if (!n || n.length !== 3) return toast('3 digits', 'err');
+    if (!confirm(`Announce ${n}?`)) return;
+    const { data, error } = await sb.rpc('admin_announce_draw', {
+      p_uid: currentUser.id, p_lucky_number: n, p_month_key: m, p_note: null
+    });
+    if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+    toast('✅ Announced', 'ok');
+    renderDraw(c);
+  };
+  if (draws?.[0]) showDrawResult(draws[0]);
+}
+
+async function renderReset(c) {
+  const { data: rows } = await sb.from('reset_requests').select('*')
+    .order('created_at', { ascending: false });
+  c.innerHTML = `
+    <div class="card">
+      <h3>🔑 Passcode Reset Requests</h3>
+      <div style="overflow:auto">
+        <table><thead><tr><th>Name</th><th>Viber</th><th>Requested</th><th>Status</th><th></th></tr></thead>
+        <tbody id="resetBody"></tbody></table>
+      </div>
+    </div>`;
+  const tb = $('resetBody');
+  if (!rows?.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">None</td></tr>'; return; }
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${esc(r.full_name || '-')}</td>
+      <td>${esc(r.viber_phone)}</td>
+      <td class="text-xs text-muted">${fmtDT(r.created_at)}</td>
+      <td><span class="badge ${r.status === 'pending' ? 'badge-yellow' : 'badge-green'}">${esc(r.status)}</span></td>
+      <td>${r.status === 'pending'
+        ? '<button class="btn btn-primary btn-sm" data-reset>Reset</button>'
+        : '<span class="text-xs text-muted">Done</span>'}</td>`;
+    const btn = tr.querySelector('[data-reset]');
+    if (btn) btn.onclick = async () => {
+      const newPass = prompt(`New passcode for ${r.viber_phone} (min 4)`);
+      if (!newPass || newPass.length < 4) return;
+      const { data: prof } = await sb.from('users').select('id')
+        .eq('viber_phone', r.viber_phone).maybeSingle();
+      if (!prof) return toast('❌ User not found', 'err');
+      const { data, error } = await sb.rpc('admin_reset_passcode', {
+        p_uid: currentUser.id, p_target: prof.id, p_new: newPass
+      });
+      if (error || data?.error) return toast('❌ ' + (error?.message || data.error), 'err');
+      await sb.from('reset_requests').update({ status: 'done', handled_at: new Date().toISOString() }).eq('id', r.id);
+      toast('✅ Done', 'ok');
+      renderReset(c);
+    };
+    tb.appendChild(tr);
+  });
+}
+
+function exportCSV(rows, filename) {
+  const csv = rows.map(r => r.map(c => {
+    const v = String(c ?? '');
+    return /[",\n]/.test(v) ? `"${v.replace(/"/g,'""')}"` : v;
+  }).join(',')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${filename}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+/* ═══════ BOOT ═══════ */
+function showAuthView() {
+  if (location.hash === '#admin') show('adminAuth');
+  else show('userAuth');
+}
+(async function boot() {
+  try {
+    const s = loadSession();
+    if (s) {
+      currentUser = s;
+      const fresh = await refreshUser();
+      if (fresh) {
+        if (fresh.role === 'super_admin') startAdmin();
+        else if (['suspended','banned','closed'].includes(fresh.status)) {
+          clearSession(); currentUser = null; showAuthView();
+        } else startDashboard();
+        return;
+      }
+    }
+    showAuthView();
+  } catch(e) { console.error(e); show('userAuth'); }
+})();
+
+/* 5D tilt boot for initial auth cards */
+document.addEventListener('DOMContentLoaded', init3DTilt);
+</script>
+</body>
+</html>
